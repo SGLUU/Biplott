@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Game } from "@/types/game";
 import { ArrowRight, Sparkles, Layers } from "lucide-react";
 
@@ -95,14 +96,15 @@ export function GameCard({ game, isSelected, onSelect }: GameCardProps) {
         </div>
       </div>
 
-      {/* CTA Button */}
-      <button
+      {/* CTA Link Button */}
+      <Link
+        href={`/play/${game.code}`}
         className="w-full mt-auto flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-rose-600 text-white dark:bg-zinc-800 dark:hover:bg-rose-600 font-semibold text-sm transition-all duration-300 shadow-md group-hover:translate-x-0.5"
       >
         <Sparkles className="w-4 h-4 text-amber-400" />
-        <span>Tạo số ngay</span>
+        <span>Tạo bộ số ngay</span>
         <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
-      </button>
+      </Link>
     </div>
   );
 }

@@ -1,20 +1,24 @@
 import { ApiResponse, Game } from "@/types/game";
+import {
+  GenerateLineRequest,
+  GenerateLineResponse,
+  GenerateSlipRequest,
+  GenerateSlipResponse,
+  ValidateLineRequest,
+  ValidateLineResponse
+} from "@/types/slip";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export async function fetchActiveGames(): Promise<Game[]> {
   try {
-    // Try /api/v1/games first, then fallback to /api/games
     const url = `${API_BASE_URL}/api/v1/games`;
     const res = await fetch(url, {
       next: { revalidate: 30 },
-      headers: {
-        "Accept": "application/json"
-      }
+      headers: { "Accept": "application/json" }
     });
 
     if (!res.ok) {
-      // Fallback
       const fallbackRes = await fetch(`${API_BASE_URL}/api/games`, {
         cache: "no-store",
         headers: { "Accept": "application/json" }
@@ -32,6 +36,93 @@ export async function fetchActiveGames(): Promise<Game[]> {
     console.error("Error fetching games from Backend API:", error);
     throw error;
   }
+}
+
+export async function fetchGameByCode(code: string): Promise<Game | null> {
+  try {
+    const url = `${API_BASE_URL}/api/v1/games/${encodeURIComponent(code)}`;
+    const res = await fetch(url, {
+      headers: { "Accept": "application/json" }
+    });
+
+    if (!res.ok) {
+      const fallbackRes = await fetch(`${API_BASE_URL}/api/games/${encodeURIComponent(code)}`, {
+        headers: { "Accept": "application/json" }
+      });
+      if (!fallbackRes.ok) return null;
+      const data: ApiResponse<Game> = await fallbackRes.json();
+      return data.data || null;
+    }
+
+    const data: ApiResponse<Game> = await res.json();
+    return data.data || null;
+  } catch (error) {
+    console.error(`Error fetching game ${code}:`, error);
+    return null;
+  }
+}
+
+export async function generateThanTaiLine(req: GenerateLineRequest): Promise<GenerateLineResponse> {
+  const url = `${API_BASE_URL}/api/v1/than-tai/generate-line`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi sinh số Thần Tài (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<GenerateLineResponse> = await res.json();
+  return data.data;
+}
+
+export async function generateThanTaiSlip(req: GenerateSlipRequest): Promise<GenerateSlipResponse> {
+  const url = `${API_BASE_URL}/api/v1/than-tai/generate-slip`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi sinh cả phiếu Thần Tài (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<GenerateSlipResponse> = await res.json();
+  return data.data;
+}
+
+export async function validateSlipLine(req: ValidateLineRequest): Promise<ValidateLineResponse> {
+  const url = `${API_BASE_URL}/api/v1/slips/validate-line`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    return {
+      isValid: false,
+      errors: [`Lỗi kết nối máy chủ (${res.status}): ${errorBody}`]
+    };
+  }
+
+  const data: ApiResponse<ValidateLineResponse> = await res.json();
+  return data.data;
 }
 
 export async function checkBackendHealth(): Promise<{ status: string; ok: boolean }> {

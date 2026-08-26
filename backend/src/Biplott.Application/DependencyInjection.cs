@@ -9,6 +9,8 @@ public static class DependencyInjection
     {
         services.AddScoped<IGameService, GameService>();
         services.AddSingleton<IGameRuleValidator, GameRuleValidator>();
+        services.AddSingleton<IRandomNumberEngine, RandomNumberEngine>();
+        services.AddScoped<ISlipService, SlipService>();
 
         return services;
     }
