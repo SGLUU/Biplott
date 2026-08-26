@@ -294,3 +294,214 @@ export async function checkBackendHealth(): Promise<{ status: string; ok: boolea
     return { status: "Unreachable", ok: false };
   }
 }
+
+// ----------------------------------------------------
+// Phase 3: Auth & User Slip APIs
+// ----------------------------------------------------
+
+let currentAccessToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  currentAccessToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return currentAccessToken;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  };
+  if (currentAccessToken) {
+    headers["Authorization"] = `Bearer ${currentAccessToken}`;
+  }
+  return headers;
+}
+
+export async function apiRegister(req: import("@/types/auth").RegisterRequest): Promise<import("@/types/auth").AuthResponse> {
+  const url = `${API_BASE_URL}/api/v1/auth/register`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || `Đăng ký thất bại (${res.status})`);
+  }
+
+  setAuthToken(data.data.accessToken);
+  return data.data;
+}
+
+export async function apiLogin(req: import("@/types/auth").LoginRequest): Promise<import("@/types/auth").AuthResponse> {
+  const url = `${API_BASE_URL}/api/v1/auth/login`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || `Đăng nhập thất bại (${res.status})`);
+  }
+
+  setAuthToken(data.data.accessToken);
+  return data.data;
+}
+
+export async function apiRefreshToken(): Promise<import("@/types/auth").AuthResponse> {
+  const url = `${API_BASE_URL}/api/v1/auth/refresh`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({})
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    setAuthToken(null);
+    throw new Error(data.message || "Phiên đăng nhập đã hết hạn.");
+  }
+
+  setAuthToken(data.data.accessToken);
+  return data.data;
+}
+
+export async function apiLogout(): Promise<void> {
+  const url = `${API_BASE_URL}/api/v1/auth/logout`;
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+  } finally {
+    setAuthToken(null);
+  }
+}
+
+export async function apiGetCurrentUser(): Promise<import("@/types/auth").UserDto> {
+  const url = `${API_BASE_URL}/api/v1/auth/me`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải thông tin người dùng.");
+  }
+  return data.data;
+}
+
+export async function apiSaveSlip(req: import("@/types/savedSlip").SaveSlipRequest): Promise<import("@/types/savedSlip").SavedSlipSummary> {
+  const url = `${API_BASE_URL}/api/v1/user/slips`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || `Lưu vé thất bại (${res.status})`);
+  }
+  return data.data;
+}
+
+export async function apiGetUserSlips(
+  page = 1,
+  pageSize = 10,
+  isFavorite = false
+): Promise<import("@/types/savedSlip").PagedResult<import("@/types/savedSlip").SavedSlipSummary>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    isFavorite: isFavorite.toString()
+  });
+  const url = `${API_BASE_URL}/api/v1/user/slips?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải danh sách vé.");
+  }
+  return data.data;
+}
+
+export async function apiGetSlipDetail(id: string): Promise<import("@/types/savedSlip").SavedSlipDetail> {
+  const url = `${API_BASE_URL}/api/v1/user/slips/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải chi tiết vé.");
+  }
+  return data.data;
+}
+
+export async function apiToggleFavoriteSlip(id: string): Promise<{ slipId: string; isFavorite: boolean }> {
+  const url = `${API_BASE_URL}/api/v1/user/slips/${encodeURIComponent(id)}/favorite`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể cập nhật yêu thích.");
+  }
+  return data.data;
+}
+
+export async function apiDeleteSlip(id: string): Promise<void> {
+  const url = `${API_BASE_URL}/api/v1/user/slips/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể xóa vé.");
+  }
+}
+
+export async function apiGetUserHistory(
+  page = 1,
+  pageSize = 20
+): Promise<import("@/types/savedSlip").PagedResult<import("@/types/savedSlip").UserActivityItem>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString()
+  });
+  const url = `${API_BASE_URL}/api/v1/user/history?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải lịch sử hoạt động.");
+  }
+  return data.data;
+}
+

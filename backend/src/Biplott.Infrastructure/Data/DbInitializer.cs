@@ -1,6 +1,7 @@
 using Biplott.Core.Entities;
 using Biplott.Core.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Biplott.Infrastructure.Data;
@@ -184,6 +185,53 @@ public static class DbInitializer
         {
             logger.LogError(ex, "An error occurred during database seeding.");
             throw;
+        }
+    }
+
+    public static async Task SeedRolesAndAdminAsync(
+        IServiceProvider serviceProvider,
+        ILogger logger)
+    {
+        try
+        {
+            using var scope = serviceProvider.CreateScope();
+            var roleManager = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+
+            if (roleManager == null || userManager == null) return;
+
+            string[] roles = { "Admin", "User" };
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole(role));
+                }
+            }
+
+            var adminEmail = "admin@biplott.local";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
+            {
+                adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    DisplayName = "Quản trị viên Bịp lót",
+                    EmailConfirmed = true,
+                    IsActive = true
+                };
+                var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                    logger.LogInformation("Seeded development admin account: admin@biplott.local");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not seed roles and admin user (database may be initializing).");
         }
     }
 }

@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { AuthInitializer } from "@/components/auth/AuthInitializer";
 
 export const metadata: Metadata = {
   title: "Bịp lót — Cơ hội để nát hơn",
@@ -25,6 +26,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AuthInitializer />
           <Header />
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
             {children}

@@ -77,6 +77,35 @@ public class SlipRepository : ISlipRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(IReadOnlyList<Slip> Items, int TotalCount)> GetUserSlipsPagedAsync(
+        string userId,
+        int page,
+        int pageSize,
+        bool isFavoriteOnly,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Slips
+            .Include(s => s.Game)
+            .Include(s => s.Lines).ThenInclude(l => l.Numbers)
+            .Where(s => s.UserId == userId);
+
+        if (isFavoriteOnly)
+        {
+            query = query.Where(s => s.IsFavorite);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<IReadOnlyList<Slip>> GetByGuestSessionAsync(string guestSessionToken, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Slips
@@ -104,6 +133,44 @@ public class SlipRepository : ISlipRepository
     {
         _dbContext.Slips.Remove(slip);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}
+
+public class UserActivityRepository : IUserActivityRepository
+{
+    private readonly BiplottDbContext _dbContext;
+
+    public UserActivityRepository(BiplottDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task AddAsync(UserActivityHistory activity, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.UserActivityHistories.AddAsync(activity, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<UserActivityHistory> Items, int TotalCount)> GetUserHistoryPagedAsync(
+        string userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.UserActivityHistories
+            .Include(a => a.Game)
+            .Where(a => a.UserId == userId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 }
 

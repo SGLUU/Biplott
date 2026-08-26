@@ -1,16 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import { Game } from "@/types/game";
 import { useSlipStore } from "@/stores/useSlipStore";
 import { useLuckyJourneyStore } from "@/stores/useLuckyJourneyStore";
 import { useMixedBuilderStore } from "@/stores/useMixedBuilderStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { SlipLineRow } from "./SlipLineRow";
 import { LineEditorModal } from "./LineEditorModal";
 import { BulkGenerateModal } from "./BulkGenerateModal";
 import { LuckyJourneyModal } from "@/components/lucky/LuckyJourneyModal";
 import { MixedBuilderModal } from "@/components/mixed/MixedBuilderModal";
-import { generateThanTaiLine } from "@/lib/api";
+import { SaveSlipPromptModal } from "./SaveSlipPromptModal";
+import { generateThanTaiLine, apiSaveSlip } from "@/lib/api";
 import {
   Sparkles,
   RotateCcw,
@@ -18,7 +21,10 @@ import {
   Calendar,
   Layers,
   HelpCircle,
-  Share2
+  Share2,
+  Heart,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 
 interface SlipBoardProps {
@@ -41,11 +47,15 @@ export function SlipBoard({ game }: SlipBoardProps) {
     applyBulkLines
   } = useSlipStore();
 
+  const { isAuthenticated } = useAuthStore();
   const openLuckyJourney = useLuckyJourneyStore((state) => state.openJourney);
   const openMixedBuilder = useMixedBuilderStore((state) => state.openBuilder);
 
-  const [editorInitialTab, setEditorInitialTab] = React.useState<"manual" | "thantai">("manual");
-  const [copied, setCopied] = React.useState(false);
+  const [editorInitialTab, setEditorInitialTab] = useState<"manual" | "thantai">("manual");
+  const [copied, setCopied] = useState(false);
+  const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string; slipId?: string } | null>(null);
 
   const activeLine = slip.lines.find(
     (l) => l.lineLabel.toUpperCase() === activeLineLabel?.toUpperCase()
@@ -101,8 +111,90 @@ export function SlipBoard({ game }: SlipBoardProps) {
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleSaveSlipClick = async () => {
+    if (!isAuthenticated) {
+      setIsSavePromptOpen(true);
+      return;
+    }
+
+    const completedLines = slip.lines.filter(
+      (l) => l.status === "Complete" && l.numbers.length > 0
+    );
+
+    if (completedLines.length === 0) {
+      setSaveStatus({
+        type: "error",
+        message: "Bạn chưa hoàn thành dòng nào để lưu. Hãy tạo ít nhất 1 dòng số!"
+      });
+      setTimeout(() => setSaveStatus(null), 3500);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const saved = await apiSaveSlip({
+        gameCode: game.code,
+        slipCode: slip.slipCode,
+        title: `Vé ${game.name} - ${slip.slipCode}`,
+        lines: completedLines.map((l) => ({
+          lineLabel: l.lineLabel,
+          numbers: l.numbers.map((n) => ({
+            value: n.value,
+            poolIndex: n.poolIndex,
+            source: n.source,
+            metadataJson: n.metadataJson
+          }))
+        }))
+      });
+
+      setSaveStatus({
+        type: "success",
+        message: `Đã lưu thành công ${completedLines.length} dòng vào Phiếu của tôi!`,
+        slipId: saved.id
+      });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Không thể lưu vé lúc này.";
+      setSaveStatus({
+        type: "error",
+        message: errorMsg
+      });
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveStatus(null), 5000);
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
+      {/* Save Notification Toast */}
+      {saveStatus && (
+        <div
+          className={`flex items-center justify-between gap-3 p-4 rounded-2xl border animate-in slide-in-from-top-2 duration-200 ${
+            saveStatus.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200"
+              : "bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800/60 text-red-800 dark:text-red-200"
+          }`}
+        >
+          <div className="flex items-center gap-2.5 text-xs font-semibold">
+            {saveStatus.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            )}
+            <span>{saveStatus.message}</span>
+          </div>
+
+          {saveStatus.type === "success" && (
+            <Link
+              href="/my/slips"
+              className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors whitespace-nowrap"
+            >
+              Xem danh sách
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Top Controls Bar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
@@ -110,18 +202,28 @@ export function SlipBoard({ game }: SlipBoardProps) {
             <Layers className="w-3.5 h-3.5" />
             Đã điền {completedCount} / 6 dòng
           </span>
-          {completedCount > 0 && (
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              (Có thể in hoặc chia sẻ vé ngay)
-            </span>
-          )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Save Slip Action */}
+          <button
+            type="button"
+            disabled={isSaving || completedCount === 0}
+            onClick={handleSaveSlipClick}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all ${
+              completedCount > 0
+                ? "bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/25 active:scale-95 cursor-pointer"
+                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed opacity-60"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isSaving ? "animate-pulse" : "fill-current"}`} />
+            <span>{isSaving ? "Đang lưu..." : "Lưu phiếu"}</span>
+          </button>
+
           <button
             type="button"
             onClick={openBulkModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-rose-600/20 active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-orange-600/20 active:scale-95 transition-all"
           >
             <Sparkles className="w-4 h-4" />
             <span>Thần Tài cả phiếu</span>
@@ -144,7 +246,7 @@ export function SlipBoard({ game }: SlipBoardProps) {
               className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
               title="Sao chép phiếu số"
             >
-              <Share2 className="w-3.5 h-3.5 text-rose-500" />
+              <Share2 className="w-3.5 h-3.5 text-orange-500" />
               <span>{copied ? "Đã chép!" : "Chia sẻ"}</span>
             </button>
           )}
@@ -214,6 +316,13 @@ export function SlipBoard({ game }: SlipBoardProps) {
           </span>
         </div>
       </div>
+
+      {/* Save Slip Prompt Modal for Guests */}
+      <SaveSlipPromptModal
+        isOpen={isSavePromptOpen}
+        gameCode={game.code}
+        onClose={() => setIsSavePromptOpen(false)}
+      />
 
       {/* Line Editor Modal (Manual / Than Tai tabs) */}
       {isLineEditorOpen && activeLine && (

@@ -22,6 +22,11 @@ public static class DependencyInjection
         // Phase 2C: Mixed Mode
         services.AddScoped<IMixedService, MixedService>();
 
+        // Phase 3: Auth, Saved Slips & History
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserSlipService, UserSlipService>();
+
         return services;
     }
 }

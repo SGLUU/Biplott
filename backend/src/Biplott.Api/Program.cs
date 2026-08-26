@@ -3,13 +3,45 @@ using Biplott.Api.Middlewares;
 using Biplott.Application;
 using Biplott.Infrastructure;
 using Biplott.Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add Services to DI Container
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// 2. JWT Authentication & Authorization
+var secretKey = builder.Configuration["Jwt:SecretKey"]
+    ?? "BiplotSuperSecretKeyForDevelopmentPhase3_MustBeAtLeast32BytesLong!";
+var issuer = builder.Configuration["Jwt:Issuer"] ?? "BiplottApi";
+var audience = builder.Configuration["Jwt:Audience"] ?? "BiplottClient";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -22,11 +54,11 @@ builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// 2. Health Checks
+// 3. Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<BiplottDbContext>("database", tags: new[] { "db", "sql", "ready" });
 
-// 3. CORS Policy
+// 4. CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -45,23 +77,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 4. Global Exception Handling Middleware
+// 5. Global Exception Handling Middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
-// 5. OpenAPI Endpoint (Enabled in Dev & Docker)
+// 6. OpenAPI Endpoint (Enabled in Dev & Docker)
 app.MapOpenApi();
 
-// 6. Middlewares Pipeline
+// 7. Middlewares Pipeline
 app.UseRouting();
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
-// 7. Health Check Endpoints
+// 8. Health Check Endpoints
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/healthz");
 
 app.MapControllers();
 
-// 8. Database Migration & Seeding on Startup with Retry Loop
+// 9. Database Migration & Seeding on Startup with Retry Loop
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -78,6 +112,7 @@ using (var scope = app.Services.CreateScope())
             logger.LogInformation("Attempting database connection and migration (Attempt {Retry}/{MaxRetries})...", retry, maxRetries);
             await dbContext.Database.MigrateAsync();
             await DbInitializer.SeedAsync(dbContext, logger);
+            await DbInitializer.SeedRolesAndAdminAsync(services, logger);
             logger.LogInformation("Database migration and seeding completed successfully.");
             break;
         }

@@ -1,6 +1,8 @@
+using Biplott.Core.Entities;
 using Biplott.Core.Interfaces;
 using Biplott.Infrastructure.Data;
 using Biplott.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +28,22 @@ public static class DependencyInjection
             });
         });
 
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 6;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireLowercase = false;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<BiplottDbContext>()
+        .AddDefaultTokenProviders();
+
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<ISlipRepository, SlipRepository>();
         services.AddScoped<IQuestionRepository, QuestionRepository>();
+        services.AddScoped<IUserActivityRepository, UserActivityRepository>();
 
         return services;
     }

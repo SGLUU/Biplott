@@ -1,9 +1,10 @@
 using Biplott.Core.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Biplott.Infrastructure.Data;
 
-public class BiplottDbContext : DbContext
+public class BiplottDbContext : IdentityDbContext<ApplicationUser>
 {
     public BiplottDbContext(DbContextOptions<BiplottDbContext> options) : base(options)
     {
@@ -20,11 +21,19 @@ public class BiplottDbContext : DbContext
     public DbSet<QuestionChoice> QuestionChoices => Set<QuestionChoice>();
     public DbSet<ChoiceTrait> ChoiceTraits => Set<ChoiceTrait>();
     public DbSet<UserQuestionHistory> UserQuestionHistories => Set<UserQuestionHistory>();
+    public DbSet<UserActivityHistory> UserActivityHistories => Set<UserActivityHistory>();
     public DbSet<EngineConfig> EngineConfigs => Set<EngineConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ApplicationUser
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(e => e.DisplayName).HasMaxLength(100);
+            entity.HasIndex(e => e.RefreshToken);
+        });
 
         // Games
         modelBuilder.Entity<Game>(entity =>
@@ -57,6 +66,8 @@ public class BiplottDbContext : DbContext
             entity.HasIndex(e => e.SlipCode).IsUnique();
             entity.HasIndex(e => e.GuestSessionToken);
             entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.IsFavorite });
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
             entity.Property(e => e.SlipCode).HasMaxLength(30).IsRequired();
             entity.Property(e => e.Title).HasMaxLength(150);
 
@@ -68,6 +79,11 @@ public class BiplottDbContext : DbContext
             entity.HasMany(e => e.Lines)
                   .WithOne(l => l.Slip)
                   .HasForeignKey(l => l.SlipId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                  .WithMany(u => u.Slips)
+                  .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -173,6 +189,26 @@ public class BiplottDbContext : DbContext
             entity.HasOne(e => e.Choice)
                   .WithMany()
                   .HasForeignKey(e => e.ChoiceId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // UserActivityHistories
+        modelBuilder.Entity<UserActivityHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt });
+            entity.Property(e => e.ActivityType).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Title).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Summary).HasMaxLength(500).IsRequired();
+
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.ActivityHistories)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Game)
+                  .WithMany()
+                  .HasForeignKey(e => e.GameId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
