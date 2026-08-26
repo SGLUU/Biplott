@@ -19,7 +19,7 @@ Trọng tâm của Bịp lót không phải là "tuyên bố tăng xác suất t
 | Thành phần | Công nghệ lựa chọn | Ghi chú |
 | :--- | :--- | :--- |
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons, Framer Motion | Tối ưu SEO, SSR, animation mượt mà, Mobile-first, Hỗ trợ Light / Dark / System |
-| **Backend** | ASP.NET Core 9 Web API, C#, Entity Framework Core | Hiệu năng cao, Type-safe, Kiến trúc Modular Monolith sạch sẽ, RESTful API |
+| **Backend** | ASP.NET Core 10 Web API (.NET 10 LTS), C#, Entity Framework Core 10 | Hiệu năng cao, Type-safe, Kiến trúc Modular Monolith sạch sẽ, RESTful API |
 | **Database** | Microsoft SQL Server | Relational data chặt chẽ, tối ưu truy vấn JSON cho Traits và Metadata |
 | **Authentication** | ASP.NET Core Identity + JWT Token | Bảo mật chuẩn công nghiệp, không tự chế thuật toán băm mật khẩu |
 | **Container & Dev** | Docker, Docker Compose | Khởi chạy toàn bộ hệ thống bằng 1 lệnh duy nhất |

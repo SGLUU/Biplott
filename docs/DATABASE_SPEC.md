@@ -6,7 +6,7 @@
 ## 1. TỔNG QUAN HỆ CƠ SỞ DỮ LIỆU
 
 - **Hệ quản trị CSDL:** Microsoft SQL Server 2022+
-- **ORM:** Entity Framework Core 9 (Code-First Approach)
+- **ORM:** Entity Framework Core 10 (Code-First Approach, .NET 10 LTS)
 - **Quy ước đặt tên (Naming Convention):**
   - Bảng: PascalCase số nhiều (`Games`, `Questions`, `Slips`).
   - Cột: PascalCase (`Id`, `CreatedAt`, `QuestionType`).

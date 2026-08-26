@@ -37,8 +37,8 @@ gantt
 
 ### Phase 1: Khởi tạo Bộ khung Dự án & Hạ tầng (Scaffolding & Foundations)
 - **Backend:**
-  - Khởi tạo ASP.NET Core 9 Web API theo mô hình Modular Monolith / Clean Architecture (`Api`, `Core`, `Application`, `Infrastructure`).
-  - Thiết lập EF Core 9 DbContext với SQL Server, cấu hình Entity Mappings và DbSeeder ban đầu (3 Game: Power 6/55, Mega 6/45, Lotto 5/35; Themes & Traits ban đầu).
+  - Khởi tạo ASP.NET Core 10 Web API (.NET 10 LTS) theo mô hình Modular Monolith / Clean Architecture (`Api`, `Core`, `Application`, `Infrastructure`).
+  - Thiết lập EF Core 10 DbContext với SQL Server, cấu hình Entity Mappings và DbSeeder ban đầu (3 Game: Power 6/55, Mega 6/45, Lotto 5/35; Themes & Traits ban đầu).
   - Cấu hình Global Exception Handling Middleware & Logging (Serilog/Console).
 - **Frontend:**
   - Khởi tạo Next.js (App Router, TypeScript, Tailwind CSS).

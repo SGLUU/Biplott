@@ -1,8 +1,8 @@
 # ⚙️ BACKEND RULES — BỊP LÓT
 
 ## 1. TECH STACK & CÔNG NGHỆ
-- **Framework:** ASP.NET Core 9 Web API, C# 13.
-- **ORM:** Entity Framework Core 9 (SQL Server Provider).
+- **Framework:** ASP.NET Core 10 Web API (.NET 10 LTS), C#.
+- **ORM:** Entity Framework Core 10 (SQL Server Provider).
 - **Authentication:** ASP.NET Core Identity + JWT Bearer Tokens.
 - **Validation:** `FluentValidation` tích hợp tự động qua Filter.
 - **Documentation:** `Swashbuckle.AspNetCore` / `Scalar` (Swagger UI).
