@@ -1,0 +1,108 @@
+using Biplott.Core.Entities;
+using Biplott.Core.Interfaces;
+using Biplott.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Biplott.Infrastructure.Repositories;
+
+public class GameRepository : IGameRepository
+{
+    private readonly BiplottDbContext _dbContext;
+
+    public GameRepository(BiplottDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<IReadOnlyList<Game>> GetActiveGamesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Games
+            .Include(g => g.Pools)
+            .Where(g => g.IsActive)
+            .OrderBy(g => g.SortOrder)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Game?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Games
+            .Include(g => g.Pools)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Code.ToUpper() == code.ToUpper(), cancellationToken);
+    }
+
+    public async Task<Game?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Games
+            .Include(g => g.Pools)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+    }
+}
+
+public class SlipRepository : ISlipRepository
+{
+    private readonly BiplottDbContext _dbContext;
+
+    public SlipRepository(BiplottDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Slip?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Slips
+            .Include(s => s.Game).ThenInclude(g => g.Pools)
+            .Include(s => s.Lines).ThenInclude(l => l.Numbers)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+    }
+
+    public async Task<Slip?> GetByCodeAsync(string slipCode, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Slips
+            .Include(s => s.Game).ThenInclude(g => g.Pools)
+            .Include(s => s.Lines).ThenInclude(l => l.Numbers)
+            .FirstOrDefaultAsync(s => s.SlipCode.ToUpper() == slipCode.ToUpper(), cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Slip>> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Slips
+            .Include(s => s.Game)
+            .Include(s => s.Lines).ThenInclude(l => l.Numbers)
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Slip>> GetByGuestSessionAsync(string guestSessionToken, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Slips
+            .Include(s => s.Game)
+            .Include(s => s.Lines).ThenInclude(l => l.Numbers)
+            .Where(s => s.GuestSessionToken == guestSessionToken)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddAsync(Slip slip, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Slips.AddAsync(slip, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(Slip slip, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Slips.Update(slip);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Slip slip, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Slips.Remove(slip);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Biplott.Api/Biplott.Api.csproj" />
+    <Project Path="src/Biplott.Application/Biplott.Application.csproj" />
+    <Project Path="src/Biplott.Core/Biplott.Core.csproj" />
+    <Project Path="src/Biplott.Infrastructure/Biplott.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Biplott.Tests/Biplott.Tests.csproj" />
+  </Folder>
+</Solution>
