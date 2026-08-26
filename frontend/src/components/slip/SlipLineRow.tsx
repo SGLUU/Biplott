@@ -2,13 +2,14 @@ import React from "react";
 import { SlipLine, SlipNumber } from "@/types/slip";
 import { Game } from "@/types/game";
 import { NumberBall } from "./NumberBall";
-import { Edit3, RotateCw, Trash2, Sparkles, PlusCircle } from "lucide-react";
+import { Edit3, RotateCw, Trash2, Sparkles, PlusCircle, Layers } from "lucide-react";
 
 interface SlipLineRowProps {
   line: SlipLine;
   game: Game;
   onOpenEditor: (initialTab?: "manual" | "thantai") => void;
   onOpenLucky: () => void;
+  onOpenMixed: () => void;
   onQuickThanTai: () => void;
   onReset: () => void;
 }
@@ -18,6 +19,7 @@ export function SlipLineRow({
   game,
   onOpenEditor,
   onOpenLucky,
+  onOpenMixed,
   onQuickThanTai,
   onReset
 }: SlipLineRowProps) {
@@ -34,6 +36,10 @@ export function SlipLineRow({
 
   const pool0Expected = pool0?.pickCount || 6;
   const pool1Expected = pool1?.pickCount || 0;
+
+  // Derive mode badge from number sources
+  const uniqueSources = Array.from(new Set(line.numbers.map((n) => n.source)));
+  const isMixed = uniqueSources.length > 1;
 
   return (
     <div
@@ -118,11 +124,16 @@ export function SlipLineRow({
           {/* Metadata / Source tag */}
           {isComplete && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground pr-1">
-              {line.numbers.every((n) => n.source === "Manual") ? (
+              {isMixed ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 text-[11px] font-black border border-purple-500/20 shadow-sm">
+                  <span>🧩</span>
+                  <span>Mixed</span>
+                </span>
+              ) : uniqueSources[0] === "Manual" ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 text-[11px] font-semibold border border-blue-500/20">
                   Tự chọn
                 </span>
-              ) : line.numbers.every((n) => n.source === "Lucky") ? (
+              ) : uniqueSources[0] === "Lucky" ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[11px] font-semibold border border-emerald-500/20">
                   <Sparkles className="w-3 h-3 text-emerald-500" />
                   Lucky Journey
@@ -142,8 +153,17 @@ export function SlipLineRow({
               <>
                 <button
                   type="button"
+                  onClick={onOpenMixed}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-3 py-1.5 text-xs font-black transition-all shadow-sm shadow-purple-600/20 active:scale-95 cursor-pointer"
+                  title="Tự xây từng số với nguồn tùy biến (Manual, Thần Tài, Lucky)"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Tự xây</span>
+                </button>
+                <button
+                  type="button"
                   onClick={onOpenLucky}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-orange-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white px-3 py-1.5 text-xs font-bold transition-all shadow-sm shadow-rose-600/25 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-orange-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white px-2.5 py-1.5 text-xs font-bold transition-all shadow-sm shadow-rose-600/25 active:scale-95"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Lucky</span>
@@ -170,9 +190,18 @@ export function SlipLineRow({
               <>
                 <button
                   type="button"
+                  onClick={onOpenMixed}
+                  className="inline-flex items-center gap-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-1.5 text-xs font-bold transition-colors"
+                  title="Chỉnh sửa chi tiết từng ô số"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tự xây</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => onOpenEditor("manual")}
                   className="inline-flex items-center gap-1 rounded-lg bg-muted/60 hover:bg-muted text-foreground px-2.5 py-1.5 text-xs font-medium transition-colors"
-                  title="Sửa bộ số"
+                  title="Sửa nhanh bộ số"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Sửa</span>

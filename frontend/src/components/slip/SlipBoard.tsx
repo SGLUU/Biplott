@@ -4,10 +4,12 @@ import React from "react";
 import { Game } from "@/types/game";
 import { useSlipStore } from "@/stores/useSlipStore";
 import { useLuckyJourneyStore } from "@/stores/useLuckyJourneyStore";
+import { useMixedBuilderStore } from "@/stores/useMixedBuilderStore";
 import { SlipLineRow } from "./SlipLineRow";
 import { LineEditorModal } from "./LineEditorModal";
 import { BulkGenerateModal } from "./BulkGenerateModal";
 import { LuckyJourneyModal } from "@/components/lucky/LuckyJourneyModal";
+import { MixedBuilderModal } from "@/components/mixed/MixedBuilderModal";
 import { generateThanTaiLine } from "@/lib/api";
 import {
   Sparkles,
@@ -40,6 +42,7 @@ export function SlipBoard({ game }: SlipBoardProps) {
   } = useSlipStore();
 
   const openLuckyJourney = useLuckyJourneyStore((state) => state.openJourney);
+  const openMixedBuilder = useMixedBuilderStore((state) => state.openBuilder);
 
   const [editorInitialTab, setEditorInitialTab] = React.useState<"manual" | "thantai">("manual");
   const [copied, setCopied] = React.useState(false);
@@ -57,6 +60,13 @@ export function SlipBoard({ game }: SlipBoardProps) {
 
   const handleOpenLuckyForLine = (lineLabel: string) => {
     openLuckyJourney(game, lineLabel);
+  };
+
+  const handleOpenMixedForLine = (lineLabel: string) => {
+    const targetLine = slip.lines.find(
+      (l) => l.lineLabel.toUpperCase() === lineLabel.toUpperCase()
+    );
+    openMixedBuilder(game, lineLabel, targetLine?.numbers);
   };
 
   const handleQuickThanTaiForLine = async (lineLabel: string) => {
@@ -185,6 +195,7 @@ export function SlipBoard({ game }: SlipBoardProps) {
               game={game}
               onOpenEditor={(tab) => handleOpenEditorForLine(line.lineLabel, tab)}
               onOpenLucky={() => handleOpenLuckyForLine(line.lineLabel)}
+              onOpenMixed={() => handleOpenMixedForLine(line.lineLabel)}
               onQuickThanTai={() => handleQuickThanTaiForLine(line.lineLabel)}
               onReset={() => resetLine(line.lineLabel)}
             />
@@ -229,6 +240,14 @@ export function SlipBoard({ game }: SlipBoardProps) {
         game={game}
         onSaveToSlipLine={(lineLabel, numbers, commentary) => {
           setLineNumbers(lineLabel, numbers, "Complete", undefined, commentary);
+        }}
+      />
+
+      {/* Mixed Builder Modal */}
+      <MixedBuilderModal
+        game={game}
+        onSaveToSlipLine={(lineLabel, numbers) => {
+          setLineNumbers(lineLabel, numbers, "Complete");
         }}
       />
 

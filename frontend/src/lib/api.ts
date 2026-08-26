@@ -190,6 +190,98 @@ export async function cancelLuckyJourney(journeyId: string): Promise<void> {
   }
 }
 
+// ==========================================
+// Phase 2C: Mixed Mode API Methods
+// ==========================================
+
+export async function generateMixedRandomSlot(
+  req: import("@/types/mixed").GenerateRandomSlotRequest
+): Promise<import("@/types/mixed").GenerateRandomSlotResponse> {
+  const url = `${API_BASE_URL}/api/v1/mixed/generate-random-slot`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi sinh số Thần Tài cho ô (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<import("@/types/mixed").GenerateRandomSlotResponse> = await res.json();
+  return data.data;
+}
+
+export async function getMixedLuckyQuestion(
+  req: import("@/types/mixed").GetMixedLuckyQuestionRequest
+): Promise<import("@/types/mixed").GetMixedLuckyQuestionResponse> {
+  const url = `${API_BASE_URL}/api/v1/mixed/lucky-question`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi lấy câu hỏi Lucky cho ô (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<import("@/types/mixed").GetMixedLuckyQuestionResponse> = await res.json();
+  return data.data;
+}
+
+export async function answerMixedLuckySlot(
+  req: import("@/types/mixed").AnswerMixedLuckySlotRequest
+): Promise<import("@/types/mixed").AnswerMixedLuckySlotResponse> {
+  const url = `${API_BASE_URL}/api/v1/mixed/lucky-answer`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi xử lý đáp án Lucky cho ô (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<import("@/types/mixed").AnswerMixedLuckySlotResponse> = await res.json();
+  return data.data;
+}
+
+export async function fillMixedRemainder(
+  req: import("@/types/mixed").FillRemainderRequest
+): Promise<import("@/types/mixed").FillRemainderResponse> {
+  const url = `${API_BASE_URL}/api/v1/mixed/fill-remainder`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi điền số còn lại (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<import("@/types/mixed").FillRemainderResponse> = await res.json();
+  return data.data;
+}
+
 export async function checkBackendHealth(): Promise<{ status: string; ok: boolean }> {
   try {
     const res = await fetch(`${API_BASE_URL}/health`, {

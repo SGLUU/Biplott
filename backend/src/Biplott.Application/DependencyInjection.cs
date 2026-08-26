@@ -19,6 +19,9 @@ public static class DependencyInjection
         services.AddSingleton<INoveltyEngine, NoveltyEngine>();
         services.AddScoped<ILuckyJourneySessionService, LuckyJourneySessionService>();
 
+        // Phase 2C: Mixed Mode
+        services.AddScoped<IMixedService, MixedService>();
+
         return services;
     }
 }

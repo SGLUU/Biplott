@@ -9,6 +9,7 @@ public interface IRandomNumberEngine
 {
     GenerateLineResponse GenerateLine(Game game, RandomStrategy strategy, List<int>? excludedNumbers = null, List<GeneratedNumberDto>? currentNumbers = null);
     List<GeneratedNumberDto> GeneratePoolNumbers(GamePool pool, RandomStrategy strategy, HashSet<int>? excludedNumbers = null);
+    List<GeneratedNumberDto> GeneratePoolNumbers(GamePool pool, int count, RandomStrategy strategy, HashSet<int>? excludedNumbers = null);
 }
 
 public class RandomNumberEngine : IRandomNumberEngine
@@ -68,6 +69,11 @@ public class RandomNumberEngine : IRandomNumberEngine
     public List<GeneratedNumberDto> GeneratePoolNumbers(GamePool pool, RandomStrategy strategy, HashSet<int>? excludedNumbers = null)
     {
         return GeneratePoolNumbersWithCount(pool, strategy, excludedNumbers ?? new HashSet<int>(), pool.PickCount);
+    }
+
+    public List<GeneratedNumberDto> GeneratePoolNumbers(GamePool pool, int count, RandomStrategy strategy, HashSet<int>? excludedNumbers = null)
+    {
+        return GeneratePoolNumbersWithCount(pool, strategy, excludedNumbers ?? new HashSet<int>(), count);
     }
 
     private List<GeneratedNumberDto> GeneratePoolNumbersWithCount(GamePool pool, RandomStrategy strategy, HashSet<int> excludedNumbers, int count)
