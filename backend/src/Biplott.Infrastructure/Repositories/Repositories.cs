@@ -106,3 +106,35 @@ public class SlipRepository : ISlipRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
+
+public class QuestionRepository : IQuestionRepository
+{
+    private readonly BiplottDbContext _dbContext;
+
+    public QuestionRepository(BiplottDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<IReadOnlyList<Question>> GetAllActiveQuestionsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Questions
+            .Include(q => q.Theme)
+            .Include(q => q.Choices)
+                .ThenInclude(c => c.ChoiceTraits)
+                    .ThenInclude(ct => ct.Trait)
+            .Where(q => q.IsActive && q.Theme.IsActive)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<QuestionChoice?> GetChoiceWithDetailsAsync(int choiceId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.QuestionChoices
+            .Include(c => c.Question).ThenInclude(q => q.Theme)
+            .Include(c => c.ChoiceTraits).ThenInclude(ct => ct.Trait)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == choiceId, cancellationToken);
+    }
+}
+

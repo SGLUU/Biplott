@@ -28,6 +28,7 @@ public static class DependencyInjection
 
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<ISlipRepository, SlipRepository>();
+        services.AddScoped<IQuestionRepository, QuestionRepository>();
 
         return services;
     }

@@ -19,3 +19,10 @@ public interface ISlipRepository
     Task UpdateAsync(Slip slip, CancellationToken cancellationToken = default);
     Task DeleteAsync(Slip slip, CancellationToken cancellationToken = default);
 }
+
+public interface IQuestionRepository
+{
+    Task<IReadOnlyList<Question>> GetAllActiveQuestionsAsync(CancellationToken cancellationToken = default);
+    Task<QuestionChoice?> GetChoiceWithDetailsAsync(int choiceId, CancellationToken cancellationToken = default);
+}
+

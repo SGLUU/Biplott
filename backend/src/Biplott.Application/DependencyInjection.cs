@@ -1,4 +1,5 @@
 using Biplott.Application.Services;
+using Biplott.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Biplott.Application;
@@ -11,6 +12,12 @@ public static class DependencyInjection
         services.AddSingleton<IGameRuleValidator, GameRuleValidator>();
         services.AddSingleton<IRandomNumberEngine, RandomNumberEngine>();
         services.AddScoped<ISlipService, SlipService>();
+
+        // Phase 2B: Lucky Journey & Novelty Engine
+        services.AddSingleton<IRandomSource, CryptographicRandomSource>();
+        services.AddSingleton<ILuckyNumberEngine, LuckyNumberEngine>();
+        services.AddSingleton<INoveltyEngine, NoveltyEngine>();
+        services.AddScoped<ILuckyJourneySessionService, LuckyJourneySessionService>();
 
         return services;
     }

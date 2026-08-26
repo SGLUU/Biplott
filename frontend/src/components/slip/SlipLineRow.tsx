@@ -8,6 +8,7 @@ interface SlipLineRowProps {
   line: SlipLine;
   game: Game;
   onOpenEditor: (initialTab?: "manual" | "thantai") => void;
+  onOpenLucky: () => void;
   onQuickThanTai: () => void;
   onReset: () => void;
 }
@@ -16,6 +17,7 @@ export function SlipLineRow({
   line,
   game,
   onOpenEditor,
+  onOpenLucky,
   onQuickThanTai,
   onReset
 }: SlipLineRowProps) {
@@ -120,6 +122,11 @@ export function SlipLineRow({
                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 text-[11px] font-semibold border border-blue-500/20">
                   Tự chọn
                 </span>
+              ) : line.numbers.every((n) => n.source === "Lucky") ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[11px] font-semibold border border-emerald-500/20">
+                  <Sparkles className="w-3 h-3 text-emerald-500" />
+                  Lucky Journey
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 text-[11px] font-semibold border border-amber-500/20">
                   <Sparkles className="w-3 h-3" />
@@ -135,8 +142,16 @@ export function SlipLineRow({
               <>
                 <button
                   type="button"
+                  onClick={onOpenLucky}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-orange-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white px-3 py-1.5 text-xs font-bold transition-all shadow-sm shadow-rose-600/25 active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Lucky</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => onOpenEditor("manual")}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-card border border-border hover:border-primary hover:bg-primary/5 text-foreground px-3 py-1.5 text-xs font-bold transition-all shadow-sm active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-card border border-border hover:border-primary hover:bg-primary/5 text-foreground px-2.5 py-1.5 text-xs font-semibold transition-all shadow-sm active:scale-95"
                 >
                   <PlusCircle className="w-3.5 h-3.5 text-rose-500" />
                   <span>Tự chọn</span>
@@ -144,10 +159,11 @@ export function SlipLineRow({
                 <button
                   type="button"
                   onClick={onQuickThanTai}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white px-3 py-1.5 text-xs font-bold transition-all shadow-sm shadow-rose-600/20 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground px-2.5 py-1.5 text-xs font-semibold transition-all shadow-sm active:scale-95"
+                  title="Thần Tài ngẫu nhiên nhanh"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Thần Tài</span>
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Thần Tài</span>
                 </button>
               </>
             ) : (

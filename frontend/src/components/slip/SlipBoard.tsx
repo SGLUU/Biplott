@@ -3,9 +3,11 @@
 import React from "react";
 import { Game } from "@/types/game";
 import { useSlipStore } from "@/stores/useSlipStore";
+import { useLuckyJourneyStore } from "@/stores/useLuckyJourneyStore";
 import { SlipLineRow } from "./SlipLineRow";
 import { LineEditorModal } from "./LineEditorModal";
 import { BulkGenerateModal } from "./BulkGenerateModal";
+import { LuckyJourneyModal } from "@/components/lucky/LuckyJourneyModal";
 import { generateThanTaiLine } from "@/lib/api";
 import {
   Sparkles,
@@ -37,6 +39,8 @@ export function SlipBoard({ game }: SlipBoardProps) {
     applyBulkLines
   } = useSlipStore();
 
+  const openLuckyJourney = useLuckyJourneyStore((state) => state.openJourney);
+
   const [editorInitialTab, setEditorInitialTab] = React.useState<"manual" | "thantai">("manual");
   const [copied, setCopied] = React.useState(false);
 
@@ -49,6 +53,10 @@ export function SlipBoard({ game }: SlipBoardProps) {
   const handleOpenEditorForLine = (lineLabel: string, initialTab: "manual" | "thantai" = "manual") => {
     setEditorInitialTab(initialTab);
     openLineEditor(lineLabel);
+  };
+
+  const handleOpenLuckyForLine = (lineLabel: string) => {
+    openLuckyJourney(game, lineLabel);
   };
 
   const handleQuickThanTaiForLine = async (lineLabel: string) => {
@@ -176,6 +184,7 @@ export function SlipBoard({ game }: SlipBoardProps) {
               line={line}
               game={game}
               onOpenEditor={(tab) => handleOpenEditorForLine(line.lineLabel, tab)}
+              onOpenLucky={() => handleOpenLuckyForLine(line.lineLabel)}
               onQuickThanTai={() => handleQuickThanTaiForLine(line.lineLabel)}
               onReset={() => resetLine(line.lineLabel)}
             />
@@ -195,7 +204,7 @@ export function SlipBoard({ game }: SlipBoardProps) {
         </div>
       </div>
 
-      {/* Line Editor Modal */}
+      {/* Line Editor Modal (Manual / Than Tai tabs) */}
       {isLineEditorOpen && activeLine && (
         <LineEditorModal
           isOpen={isLineEditorOpen}
@@ -214,6 +223,14 @@ export function SlipBoard({ game }: SlipBoardProps) {
           }}
         />
       )}
+
+      {/* Lucky Journey Modal */}
+      <LuckyJourneyModal
+        game={game}
+        onSaveToSlipLine={(lineLabel, numbers, commentary) => {
+          setLineNumbers(lineLabel, numbers, "Complete", undefined, commentary);
+        }}
+      />
 
       {/* Bulk Generate Modal */}
       {isBulkModalOpen && (

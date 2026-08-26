@@ -201,7 +201,7 @@ public class SlipServiceTests
         Assert.All(remainingLines, l => Assert.All(l.Numbers, n => Assert.Equal(NumberSource.Random, n.Source)));
     }
 
-    private class FakeGameRepository : IGameRepository
+    public class FakeGameRepository : IGameRepository
     {
         private readonly List<Game> _games;
 

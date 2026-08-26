@@ -7,6 +7,12 @@ import {
   ValidateLineRequest,
   ValidateLineResponse
 } from "@/types/slip";
+import {
+  StartJourneyRequest,
+  StartJourneyResponse,
+  AnswerStepRequest,
+  AnswerStepResponse
+} from "@/types/lucky";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -123,6 +129,65 @@ export async function validateSlipLine(req: ValidateLineRequest): Promise<Valida
 
   const data: ApiResponse<ValidateLineResponse> = await res.json();
   return data.data;
+}
+
+// ==========================================
+// Phase 2B: Lucky Journey API Methods
+// ==========================================
+
+export async function startLuckyJourney(req: StartJourneyRequest): Promise<StartJourneyResponse> {
+  const url = `${API_BASE_URL}/api/v1/lucky/journeys/start`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Không thể khởi tạo Lucky Journey (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<StartJourneyResponse> = await res.json();
+  return data.data;
+}
+
+export async function answerLuckyStep(
+  journeyId: string,
+  req: AnswerStepRequest
+): Promise<AnswerStepResponse> {
+  const url = `${API_BASE_URL}/api/v1/lucky/journeys/${encodeURIComponent(journeyId)}/answer`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(req)
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Lỗi xử lý đáp án (${res.status}): ${errorBody}`);
+  }
+
+  const data: ApiResponse<AnswerStepResponse> = await res.json();
+  return data.data;
+}
+
+export async function cancelLuckyJourney(journeyId: string): Promise<void> {
+  try {
+    const url = `${API_BASE_URL}/api/v1/lucky/journeys/${encodeURIComponent(journeyId)}/cancel`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Accept": "application/json" }
+    });
+  } catch (err) {
+    console.warn("Lỗi khi hủy Lucky Journey session:", err);
+  }
 }
 
 export async function checkBackendHealth(): Promise<{ status: string; ok: boolean }> {

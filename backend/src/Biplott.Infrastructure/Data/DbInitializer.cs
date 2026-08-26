@@ -175,6 +175,9 @@ public static class DbInitializer
                 await context.SaveChangesAsync(cancellationToken);
             }
 
+            // Seed full 10 Themes & 100+ Questions Content
+            await ContentSeeder.SeedContentAsync(context, logger, cancellationToken);
+
             logger.LogInformation("Database seeding completed successfully.");
         }
         catch (Exception ex)
