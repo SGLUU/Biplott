@@ -11,6 +11,7 @@ interface NumberBallProps {
   selected?: boolean;
   disabled?: boolean;
   interactive?: boolean;
+  isLocked?: boolean;
   onClick?: () => void;
 }
 
@@ -24,6 +25,7 @@ export function NumberBall({
   selected = false,
   disabled = false,
   interactive = false,
+  isLocked = false,
   onClick
 }: NumberBallProps) {
   const formatted = value.toString().padStart(2, "0");
@@ -82,6 +84,12 @@ export function NumberBall({
       {isSpecialPool && !interactive && (
         <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-stone-900 text-[8px] text-yellow-300 font-extrabold shadow">
           ★
+        </span>
+      )}
+
+      {isLocked && (
+        <span className="absolute -top-1.5 -left-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 border border-slate-700 text-[8px] text-amber-400 font-extrabold shadow-sm">
+          🔒
         </span>
       )}
     </button>

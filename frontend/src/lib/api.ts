@@ -11,7 +11,9 @@ import {
   StartJourneyRequest,
   StartJourneyResponse,
   AnswerStepRequest,
-  AnswerStepResponse
+  AnswerStepResponse,
+  DailyJourneyStatusResponse,
+  LuckyDna
 } from "@/types/lucky";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -504,4 +506,142 @@ export async function apiGetUserHistory(
   }
   return data.data;
 }
+
+// ==========================================
+// Phase 5: Lucky DNA, Daily Journey & Remix
+// ==========================================
+
+export async function apiGetLuckyDna(guestSessionToken?: string): Promise<LuckyDna> {
+  const params = new URLSearchParams();
+  if (guestSessionToken) {
+    params.append("guestSessionToken", guestSessionToken);
+  }
+  const url = `${API_BASE_URL}/api/v1/lucky-dna?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải Lucky DNA.");
+  }
+  return data.data as LuckyDna;
+}
+
+export async function apiResetLuckyDna(): Promise<boolean> {
+  const url = `${API_BASE_URL}/api/v1/lucky-dna/reset`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể reset Lucky DNA.");
+  }
+  return data.data;
+}
+
+export async function apiGetTodayDailyJourney(gameCode: string, guestSessionToken?: string): Promise<DailyJourneyStatusResponse | null> {
+  const params = new URLSearchParams({ gameCode });
+  if (guestSessionToken) {
+    params.append("guestSessionToken", guestSessionToken);
+  }
+  const url = `${API_BASE_URL}/api/v1/daily-journeys?${params.toString()}`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+    credentials: "include"
+  });
+
+  if (res.status === 404) return null;
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể tải Daily Journey.");
+  }
+  return data.data as DailyJourneyStatusResponse;
+}
+
+export async function apiStartDailyJourney(req: StartJourneyRequest): Promise<StartJourneyResponse> {
+  const url = `${API_BASE_URL}/api/v1/daily-journeys/start`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể bắt đầu Daily Journey.");
+  }
+  return data.data;
+}
+
+export async function apiAnswerDailyStep(journeyId: string, req: AnswerStepRequest): Promise<AnswerStepResponse> {
+  const url = `${API_BASE_URL}/api/v1/daily-journeys/${encodeURIComponent(journeyId)}/answer`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Lỗi lưu câu trả lời Daily Journey.");
+  }
+  return data.data;
+}
+
+export async function apiQuickRemix(req: unknown): Promise<GenerateLineResponse> {
+  const url = `${API_BASE_URL}/api/v1/remix/quick`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể thực hiện Quick Remix.");
+  }
+  return data.data;
+}
+
+export async function apiStartLuckyRemix(req: unknown): Promise<StartJourneyResponse> {
+  const url = `${API_BASE_URL}/api/v1/remix/lucky/start`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Không thể khởi động Lucky Remix.");
+  }
+  return data.data;
+}
+
+export async function apiAnswerLuckyRemixStep(journeyId: string, req: AnswerStepRequest): Promise<AnswerStepResponse> {
+  const url = `${API_BASE_URL}/api/v1/remix/lucky/${encodeURIComponent(journeyId)}/answer`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    credentials: "include",
+    body: JSON.stringify(req)
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Lỗi lưu câu trả lời Lucky Remix.");
+  }
+  return data.data;
+}
+
 

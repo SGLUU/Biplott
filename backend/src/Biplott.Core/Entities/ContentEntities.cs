@@ -85,6 +85,7 @@ public class UserQuestionHistory
     public int ChoiceId { get; set; }
     public int RevealedNumber { get; set; }
     public DateTime AnsweredAt { get; set; } = DateTime.UtcNow;
+    public string? JourneyId { get; set; }
 
     public Question Question { get; set; } = null!;
     public QuestionChoice Choice { get; set; } = null!;
@@ -97,4 +98,64 @@ public class EngineConfig
     public string ValueJson { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class UserTraitProfile
+{
+    public int Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public int TraitId { get; set; }
+    public double AccumulatedWeight { get; set; } = 0.0;
+    public int SampleCount { get; set; } = 0;
+    public int NormalizedScore { get; set; } = 0;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public Trait Trait { get; set; } = null!;
+}
+
+public class DailyJourney
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string? UserId { get; set; }
+    public string? GuestSessionToken { get; set; }
+    public int GameId { get; set; }
+    public string DailyDate { get; set; } = string.Empty; // yyyy-MM-dd
+    public string Status { get; set; } = "InProgress"; // InProgress | Completed
+    public int CurrentStep { get; set; } = 1;
+    public int TotalSteps { get; set; } = 6;
+    public int ExpectedQuestionId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public Game Game { get; set; } = null!;
+    public List<DailyJourneyNumber> Numbers { get; set; } = new();
+    public List<DailyJourneyAnswer> Answers { get; set; } = new();
+}
+
+public class DailyJourneyNumber
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid DailyJourneyId { get; set; }
+    public int Value { get; set; }
+    public int PoolIndex { get; set; } = 0;
+    public int OrderIndex { get; set; } = 0;
+    public string? DominantTrait { get; set; }
+    public string? Explanation { get; set; }
+
+    public DailyJourney DailyJourney { get; set; } = null!;
+}
+
+public class DailyJourneyAnswer
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid DailyJourneyId { get; set; }
+    public int QuestionId { get; set; }
+    public int ChoiceId { get; set; }
+    public int StepIndex { get; set; }
+    public string QuestionContent { get; set; } = string.Empty;
+    public string ChoiceContent { get; set; } = string.Empty;
+    public string ThemeName { get; set; } = string.Empty;
+    public string? Subtitle { get; set; }
+
+    public DailyJourney DailyJourney { get; set; } = null!;
 }

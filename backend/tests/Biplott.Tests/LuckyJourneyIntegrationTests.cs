@@ -9,6 +9,21 @@ namespace Biplott.Tests;
 
 public class LuckyJourneyIntegrationTests
 {
+    private class FakeLuckyDnaService : ILuckyDnaService
+    {
+        public Task<LuckyDnaResponse> GetUserDnaAsync(string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new LuckyDnaResponse());
+
+        public Task<LuckyDnaResponse> GetGuestDnaAsync(string guestSessionToken, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new LuckyDnaResponse());
+
+        public Task ResetUserDnaAsync(string userId, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task UpdateDnaForAnswerAsync(string? userId, string? guestSessionToken, int questionId, int choiceId, string? journeyId, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
     private class FakeQuestionRepository : IQuestionRepository
     {
         private readonly List<Question> _questions;
@@ -103,7 +118,7 @@ public class LuckyJourneyIntegrationTests
         var rng = new DeterministicRandomSource(42);
         var novelty = new NoveltyEngine(rng);
         var luckyEngine = new LuckyNumberEngine(rng);
-        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo);
+        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo, new FakeLuckyDnaService());
 
         var response = await service.StartJourneyAsync(new StartJourneyRequest
         {
@@ -127,7 +142,7 @@ public class LuckyJourneyIntegrationTests
         var rng = new DeterministicRandomSource(100);
         var novelty = new NoveltyEngine(rng);
         var luckyEngine = new LuckyNumberEngine(rng);
-        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo);
+        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo, new FakeLuckyDnaService());
 
         var start = await service.StartJourneyAsync(new StartJourneyRequest { GameCode = "POWER_655", LineLabel = "B" });
         string journeyId = start.JourneyId;
@@ -175,7 +190,7 @@ public class LuckyJourneyIntegrationTests
         var rng = new DeterministicRandomSource(200);
         var novelty = new NoveltyEngine(rng);
         var luckyEngine = new LuckyNumberEngine(rng);
-        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo);
+        var service = new LuckyJourneySessionService(gameRepo, novelty, luckyEngine, qRepo, new FakeLuckyDnaService());
 
         var start = await service.StartJourneyAsync(new StartJourneyRequest { GameCode = "LOTTO_535", LineLabel = "C" });
         string journeyId = start.JourneyId;
@@ -213,7 +228,7 @@ public class LuckyJourneyIntegrationTests
     {
         var (gameRepo, qRepo) = CreateMockRepositories();
         var rng = new DeterministicRandomSource(300);
-        var service = new LuckyJourneySessionService(gameRepo, new NoveltyEngine(rng), new LuckyNumberEngine(rng), qRepo);
+        var service = new LuckyJourneySessionService(gameRepo, new NoveltyEngine(rng), new LuckyNumberEngine(rng), qRepo, new FakeLuckyDnaService());
 
         var start = await service.StartJourneyAsync(new StartJourneyRequest { GameCode = "POWER_655", LineLabel = "A" });
 

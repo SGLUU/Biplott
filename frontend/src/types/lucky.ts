@@ -43,6 +43,7 @@ export interface RevealedNumberDto {
   questionText?: string;
   choiceText?: string;
   metadataJson?: string;
+  isLocked?: boolean;
 }
 
 export interface StartJourneyRequest {
@@ -50,6 +51,7 @@ export interface StartJourneyRequest {
   lineLabel: string;
   recentQuestionIds?: number[];
   recentThemeIds?: number[];
+  guestSessionToken?: string;
 }
 
 export interface StartJourneyResponse {
@@ -83,4 +85,36 @@ export interface AnswerStepResponse {
   nextQuestion?: QuestionDto;
   completedNumbers?: RevealedNumberDto[];
   journeyCommentary?: string;
+}
+
+// Matches DailyJourneyStatus values from backend
+export type DailyJourneyStatus = "NotStarted" | "InProgress" | "Completed";
+
+// Matches backend DailyJourneyDto (returned from GET /api/v1/daily-journeys)
+export interface DailyJourneyStatusResponse {
+  journeyId: string;
+  gameCode: string;
+  dailyDate: string;
+  status: DailyJourneyStatus;
+  currentStep: number;
+  totalSteps: number;
+  numbers: RevealedNumberDto[];
+  activeQuestion?: QuestionDto;
+}
+
+export interface TraitScore {
+  traitCode: string;
+  traitName: string;
+  score: number;
+  sampleCount: number;
+}
+
+export interface LuckyDna {
+  status: "NotFormed" | "Forming" | "Completed";
+  totalAnswers: number;
+  archetype: string;
+  description: string;
+  topTraits: TraitScore[];
+  allTraits: TraitScore[];
+  updatedAt?: string;
 }

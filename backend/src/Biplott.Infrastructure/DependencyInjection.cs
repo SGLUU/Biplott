@@ -52,6 +52,11 @@ public static class DependencyInjection
         services.AddScoped<Biplott.Application.Services.IAdminTraitService, Biplott.Infrastructure.Services.AdminTraitService>();
         services.AddScoped<Biplott.Application.Services.IAdminQuestionService, Biplott.Infrastructure.Services.AdminQuestionService>();
         services.AddScoped<Biplott.Application.Services.IContentImportService, Biplott.Infrastructure.Services.ContentImportService>();
+        // Phase 5: Lucky DNA, Daily Journeys, and Remix Services
+        services.AddSingleton<IDateTimeProvider, Biplott.Infrastructure.Services.DateTimeProvider>();
+        services.AddScoped<Biplott.Application.Services.ILuckyDnaService, Biplott.Infrastructure.Services.LuckyDnaService>();
+        services.AddScoped<Biplott.Application.Services.IDailyJourneyService, Biplott.Infrastructure.Services.DailyJourneyService>();
+        services.AddScoped<Biplott.Application.Services.IRemixService, Biplott.Infrastructure.Services.RemixService>();
         services.AddScoped<Biplott.Application.Services.IAdminUserService, Biplott.Infrastructure.Services.AdminUserService>();
 
         return services;

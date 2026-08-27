@@ -21,3 +21,13 @@ export function sortSlipNumbers<T extends SortableSlipNumber>(numbers: T[]): T[]
     return a.value - b.value;
   });
 }
+
+export function getOrCreateGuestSessionToken(): string {
+  if (typeof window === "undefined") return "";
+  let token = localStorage.getItem("guestSessionToken");
+  if (!token) {
+    token = "GUEST-" + Math.random().toString(36).substring(2, 15).toUpperCase();
+    localStorage.setItem("guestSessionToken", token);
+  }
+  return token;
+}

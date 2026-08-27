@@ -13,7 +13,12 @@ import { BulkGenerateModal } from "./BulkGenerateModal";
 import { LuckyJourneyModal } from "@/components/lucky/LuckyJourneyModal";
 import { MixedBuilderModal } from "@/components/mixed/MixedBuilderModal";
 import { SaveSlipPromptModal } from "./SaveSlipPromptModal";
-import { generateThanTaiLine, apiSaveSlip } from "@/lib/api";
+import { useDailyJourneyStore } from "@/stores/useDailyJourneyStore";
+import { DailyJourneyModal } from "@/components/lucky/DailyJourneyModal";
+import { useLuckyRemixStore } from "@/stores/useLuckyRemixStore";
+import { LuckyRemixModal } from "@/components/lucky/LuckyRemixModal";
+import { generateThanTaiLine, apiSaveSlip, apiGetTodayDailyJourney, apiQuickRemix } from "@/lib/api";
+import { getOrCreateGuestSessionToken } from "@/lib/utils";
 import {
   Sparkles,
   RotateCcw,
@@ -24,7 +29,10 @@ import {
   Share2,
   Heart,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Eye,
+  ArrowRight
 } from "lucide-react";
 
 interface SlipBoardProps {
@@ -56,6 +64,32 @@ export function SlipBoard({ game }: SlipBoardProps) {
   const [isSavePromptOpen, setIsSavePromptOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string; slipId?: string } | null>(null);
+
+  const openDailyJourney = useDailyJourneyStore((state) => state.openJourney);
+  const isDailyOpen = useDailyJourneyStore((state) => state.isOpen);
+  const [dailyStatus, setDailyStatus] = useState<"NotStarted" | "InProgress" | "Completed">("NotStarted");
+  const [loadingDaily, setLoadingDaily] = useState(true);
+
+  const fetchDaily = React.useCallback(async () => {
+    try {
+      setLoadingDaily(true);
+      const guestToken = getOrCreateGuestSessionToken();
+      const res = await apiGetTodayDailyJourney(game.code, guestToken);
+      if (res) {
+        setDailyStatus(res.status);
+      } else {
+        setDailyStatus("NotStarted");
+      }
+    } catch (err: unknown) {
+      console.error(err);
+    } finally {
+      setLoadingDaily(false);
+    }
+  }, [game.code]);
+
+  React.useEffect(() => {
+    fetchDaily();
+  }, [fetchDaily, isDailyOpen]);
 
   const activeLine = slip.lines.find(
     (l) => l.lineLabel.toUpperCase() === activeLineLabel?.toUpperCase()
@@ -95,6 +129,51 @@ export function SlipBoard({ game }: SlipBoardProps) {
       );
     } catch (err) {
       console.error("Lỗi sinh số Thần Tài nhanh:", err);
+    }
+  };
+
+  const handleQuickRemixForLine = async (lineLabel: string) => {
+    const targetLine = slip.lines.find(
+      (l) => l.lineLabel.toUpperCase() === lineLabel.toUpperCase()
+    );
+    if (!targetLine) return;
+
+    try {
+      const res = await apiQuickRemix({
+        gameCode: game.code,
+        currentNumbers: targetLine.numbers.map((n) => ({
+          value: n.value,
+          poolIndex: n.poolIndex,
+          source: n.source,
+          metadataJson: n.metadataJson,
+          isLocked: n.isLocked
+        }))
+      });
+
+      setLineNumbers(
+        lineLabel,
+        res.numbers,
+        "Complete",
+        res.strategy,
+        res.commentary
+      );
+    } catch (err: unknown) {
+      console.error("Lỗi Quick Remix:", err);
+      const msg = err instanceof Error ? err.message : "Lỗi khi thực hiện Quick Remix.";
+      alert(msg);
+    }
+  };
+
+  const handleLuckyRemixForLine = async (lineLabel: string) => {
+    const targetLine = slip.lines.find(
+      (l) => l.lineLabel.toUpperCase() === lineLabel.toUpperCase()
+    );
+    if (!targetLine) return;
+
+    try {
+      await useLuckyRemixStore.getState().openRemix(game, lineLabel, targetLine.numbers);
+    } catch (err: unknown) {
+      console.error("Lỗi Lucky Remix:", err);
     }
   };
 
@@ -192,6 +271,60 @@ export function SlipBoard({ game }: SlipBoardProps) {
               Xem danh sách
             </Link>
           )}
+        </div>
+      )}
+
+      {/* Daily Journey Banner */}
+      {!loadingDaily && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-rose-600/10 via-orange-500/10 to-amber-500/10 border border-orange-500/20 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-orange-500" />
+              <h4 className="text-sm font-black text-foreground">Số Phận Hôm Nay (Daily Journey)</h4>
+              {dailyStatus === "Completed" ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  Đã hoàn thành
+                </span>
+              ) : dailyStatus === "InProgress" ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                  Đang chơi
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-500 border border-zinc-500/20">
+                  Chưa chơi
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {dailyStatus === "Completed"
+                ? "Bạn đã giải mã bộ số định mệnh ngày hôm nay. Áp dụng ngay vào dòng D để mua vé!"
+                : "Hành trình tâm linh duy nhất trong ngày giúp bạn chọn ra bộ số độc nhất."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openDailyJourney(game)}
+            className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-bold transition-all shadow shrink-0 active:scale-95"
+          >
+            {dailyStatus === "Completed" ? (
+              <>
+                <Eye className="w-3.5 h-3.5" />
+                <span>Xem lại hành trình</span>
+              </>
+            ) : dailyStatus === "InProgress" ? (
+              <>
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Chơi tiếp</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span>Bắt đầu chơi</span>
+              </>
+            )}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 
@@ -299,6 +432,8 @@ export function SlipBoard({ game }: SlipBoardProps) {
               onOpenLucky={() => handleOpenLuckyForLine(line.lineLabel)}
               onOpenMixed={() => handleOpenMixedForLine(line.lineLabel)}
               onQuickThanTai={() => handleQuickThanTaiForLine(line.lineLabel)}
+              onQuickRemix={() => handleQuickRemixForLine(line.lineLabel)}
+              onLuckyRemix={() => handleLuckyRemixForLine(line.lineLabel)}
               onReset={() => resetLine(line.lineLabel)}
             />
           ))}
@@ -372,6 +507,22 @@ export function SlipBoard({ game }: SlipBoardProps) {
           }}
         />
       )}
+
+      {/* Daily Journey Modal */}
+      <DailyJourneyModal
+        game={game}
+        onSaveToSlipLine={(lineLabel, numbers, commentary) => {
+          setLineNumbers(lineLabel, numbers, "Complete", undefined, commentary);
+        }}
+      />
+
+      {/* Lucky Remix Modal */}
+      <LuckyRemixModal
+        game={game}
+        onSaveToSlipLine={(lineLabel, numbers, commentary) => {
+          setLineNumbers(lineLabel, numbers, "Complete", undefined, commentary);
+        }}
+      />
     </div>
   );
 }

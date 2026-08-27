@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Game } from "@/types/game";
-import { SlipLine, SlipNumber, RandomStrategy } from "@/types/slip";
+import { SlipLine, SlipNumber, RandomStrategy, NumberSource } from "@/types/slip";
 import { NumberBall } from "./NumberBall";
 import { validateSlipLine, generateThanTaiLine } from "@/lib/api";
 import {
@@ -108,9 +108,16 @@ export function LineEditorModal({
   const isPool0Complete = selectedPool0.length === pool0.pickCount;
   const isPool1Complete = !pool1 || selectedPool1.length === pool1.pickCount;
   const isManualComplete = isPool0Complete && isPool1Complete;
+  const hasLockedNumbers = line.numbers.some((n) => n.isLocked);
 
   const handleToggleNumber = (poolIndex: number, val: number, maxCount: number) => {
     setErrorMessage(null);
+    const originalNumber = line.numbers.find((n) => n.value === val && n.poolIndex === poolIndex);
+    if (originalNumber?.isLocked) {
+      setErrorMessage(`Con số ${val.toString().padStart(2, "0")} đang được khóa. Hãy mở khóa ngoài bảng vé trước khi thay đổi!`);
+      return;
+    }
+
     setSelectedNumbersByPool((prev) => {
       const current = prev[poolIndex] || [];
       if (current.includes(val)) {
@@ -124,7 +131,12 @@ export function LineEditorModal({
   };
 
   const handleClearSelection = () => {
-    setSelectedNumbersByPool({ 0: [], 1: [] });
+    const lockedPool0 = line.numbers.filter((n) => n.poolIndex === 0 && n.isLocked).map((n) => n.value);
+    const lockedPool1 = line.numbers.filter((n) => n.poolIndex === 1 && n.isLocked).map((n) => n.value);
+    setSelectedNumbersByPool({
+      0: lockedPool0,
+      1: lockedPool1
+    });
     setErrorMessage(null);
   };
 
@@ -138,18 +150,28 @@ export function LineEditorModal({
     setErrorMessage(null);
 
     const formattedNumbers: SlipNumber[] = [
-      ...[...selectedPool0].sort((a, b) => a - b).map((val) => ({
-        value: val,
-        formatted: val.toString().padStart(2, "0"),
-        poolIndex: 0,
-        source: "Manual" as const
-      })),
-      ...[...selectedPool1].sort((a, b) => a - b).map((val) => ({
-        value: val,
-        formatted: val.toString().padStart(2, "0"),
-        poolIndex: 1,
-        source: "Manual" as const
-      }))
+      ...[...selectedPool0].sort((a, b) => a - b).map((val) => {
+        const orig = line.numbers.find((n) => n.value === val && n.poolIndex === 0);
+        return {
+          value: val,
+          formatted: val.toString().padStart(2, "0"),
+          poolIndex: 0,
+          source: (orig?.source ?? "Manual") as NumberSource,
+          metadataJson: orig?.metadataJson,
+          isLocked: orig?.isLocked || false
+        };
+      }),
+      ...[...selectedPool1].sort((a, b) => a - b).map((val) => {
+        const orig = line.numbers.find((n) => n.value === val && n.poolIndex === 1);
+        return {
+          value: val,
+          formatted: val.toString().padStart(2, "0"),
+          poolIndex: 1,
+          source: (orig?.source ?? "Manual") as NumberSource,
+          metadataJson: orig?.metadataJson,
+          isLocked: orig?.isLocked || false
+        };
+      })
     ];
 
     try {
@@ -417,6 +439,14 @@ export function LineEditorModal({
                 </div>
               )}
             </div>
+          ) : hasLockedNumbers ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+              <AlertCircle className="w-12 h-12 text-amber-500" />
+              <h3 className="text-base font-extrabold text-foreground">Không thể áp dụng Thần Tài</h3>
+              <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                Dòng này có chứa một hoặc nhiều con số đang được khóa (🔒). Để thay đổi số định mệnh hoặc sử dụng các phong cách Thần Tài khác, vui lòng mở khóa các con số ở bảng vé chính trước, hoặc sử dụng tính năng **Remix Nhanh / Remix Lucky** ở bảng vé để giữ nguyên các ô số đã khóa!
+              </p>
+            </div>
           ) : (
             <div className="space-y-6">
               {/* Strategy Picker Grid */}
@@ -555,6 +585,16 @@ export function LineEditorModal({
                 </button>
               </div>
             </>
+          ) : hasLockedNumbers ? (
+            <div className="flex items-center justify-end w-full">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-border hover:bg-muted text-foreground transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
           ) : (
             <>
               <button

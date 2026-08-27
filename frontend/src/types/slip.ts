@@ -8,6 +8,7 @@ export interface SlipNumber {
   poolIndex: number;
   source: NumberSource;
   metadataJson?: string;
+  isLocked?: boolean;
 }
 
 export interface SlipLine {

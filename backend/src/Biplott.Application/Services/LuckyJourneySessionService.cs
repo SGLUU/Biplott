@@ -8,8 +8,8 @@ namespace Biplott.Application.Services;
 
 public interface ILuckyJourneySessionService
 {
-    Task<StartJourneyResponse> StartJourneyAsync(StartJourneyRequest request, CancellationToken cancellationToken = default);
-    Task<AnswerStepResponse> AnswerStepAsync(string journeyId, AnswerStepRequest request, CancellationToken cancellationToken = default);
+    Task<StartJourneyResponse> StartJourneyAsync(StartJourneyRequest request, string? userId = null, CancellationToken cancellationToken = default);
+    Task<AnswerStepResponse> AnswerStepAsync(string journeyId, AnswerStepRequest request, string? userId = null, CancellationToken cancellationToken = default);
     Task CancelJourneyAsync(string journeyId);
 }
 
@@ -28,6 +28,12 @@ public class LuckyJourneySession
     public List<int> ThemesUsed { get; set; } = new();
     public List<QuestionType> QuestionTypesUsed { get; set; } = new();
     public int ExpectedQuestionId { get; set; }
+
+    // Phase 5 fields
+    public bool IsRemix { get; set; } = false;
+    public List<RevealedNumberDto> LockedNumbers { get; set; } = new();
+    public string? UserId { get; set; }
+    public string? GuestSessionToken { get; set; }
 }
 
 public class LuckyJourneySessionService : ILuckyJourneySessionService
@@ -38,20 +44,26 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
     private readonly INoveltyEngine _noveltyEngine;
     private readonly ILuckyNumberEngine _luckyEngine;
     private readonly IQuestionRepository _questionRepository;
+    private readonly ILuckyDnaService _dnaService;
 
     public LuckyJourneySessionService(
         IGameRepository gameRepository,
         INoveltyEngine noveltyEngine,
         ILuckyNumberEngine luckyEngine,
-        IQuestionRepository questionRepository)
+        IQuestionRepository questionRepository,
+        ILuckyDnaService dnaService)
     {
         _gameRepository = gameRepository;
         _noveltyEngine = noveltyEngine;
         _luckyEngine = luckyEngine;
         _questionRepository = questionRepository;
+        _dnaService = dnaService;
     }
 
-    public async Task<StartJourneyResponse> StartJourneyAsync(StartJourneyRequest request, CancellationToken cancellationToken = default)
+    public async Task<StartJourneyResponse> StartJourneyAsync(
+        StartJourneyRequest request,
+        string? userId = null,
+        CancellationToken cancellationToken = default)
     {
         var game = await _gameRepository.GetByCodeAsync(request.GameCode, cancellationToken);
         if (game == null)
@@ -83,7 +95,9 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
             CurrentStep = 1,
             TotalSteps = totalSteps,
             Status = "InProgress",
-            ExpectedQuestionId = firstQuestion.Id
+            ExpectedQuestionId = firstQuestion.Id,
+            UserId = userId,
+            GuestSessionToken = request.GuestSessionToken
         };
 
         session.AnsweredQuestionIds.Add(firstQuestion.Id);
@@ -108,7 +122,11 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
         };
     }
 
-    public async Task<AnswerStepResponse> AnswerStepAsync(string journeyId, AnswerStepRequest request, CancellationToken cancellationToken = default)
+    public async Task<AnswerStepResponse> AnswerStepAsync(
+        string journeyId,
+        AnswerStepRequest request,
+        string? userId = null,
+        CancellationToken cancellationToken = default)
     {
         if (!Sessions.TryGetValue(journeyId, out var session) || session.Status != "InProgress")
         {
@@ -151,6 +169,15 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
             previousInLine);
 
         session.GeneratedNumbers.Add(revealed);
+
+        // Update Lucky DNA Profile
+        await _dnaService.UpdateDnaForAnswerAsync(
+            userId ?? session.UserId,
+            session.GuestSessionToken,
+            request.QuestionId,
+            request.ChoiceId,
+            journeyId: session.JourneyId,
+            cancellationToken);
 
         bool isCompleted = session.CurrentStep >= session.TotalSteps;
 

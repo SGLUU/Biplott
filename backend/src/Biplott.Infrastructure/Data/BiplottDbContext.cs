@@ -23,6 +23,10 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserQuestionHistory> UserQuestionHistories => Set<UserQuestionHistory>();
     public DbSet<UserActivityHistory> UserActivityHistories => Set<UserActivityHistory>();
     public DbSet<EngineConfig> EngineConfigs => Set<EngineConfig>();
+    public DbSet<UserTraitProfile> UserTraitProfiles => Set<UserTraitProfile>();
+    public DbSet<DailyJourney> DailyJourneys => Set<DailyJourney>();
+    public DbSet<DailyJourneyNumber> DailyJourneyNumbers => Set<DailyJourneyNumber>();
+    public DbSet<DailyJourneyAnswer> DailyJourneyAnswers => Set<DailyJourneyAnswer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -187,6 +191,9 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.UserId, e.AnsweredAt });
             entity.HasIndex(e => new { e.GuestSessionToken, e.AnsweredAt });
+            entity.HasIndex(e => new { e.JourneyId, e.QuestionId })
+                  .IsUnique()
+                  .HasFilter("[JourneyId] IS NOT NULL");
 
             entity.HasOne(e => e.Question)
                   .WithMany(q => q.Histories)
@@ -226,6 +233,59 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.Key).IsUnique();
             entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        // UserTraitProfiles
+        modelBuilder.Entity<UserTraitProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.TraitId }).IsUnique();
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasOne(e => e.Trait)
+                  .WithMany()
+                  .HasForeignKey(e => e.TraitId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                  .WithMany(u => u.TraitProfiles)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DailyJourneys
+        modelBuilder.Entity<DailyJourney>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.GameId, e.DailyDate }).IsUnique().HasFilter("[UserId] IS NOT NULL");
+            entity.HasIndex(e => new { e.GuestSessionToken, e.GameId, e.DailyDate });
+
+            entity.HasOne(e => e.Game)
+                  .WithMany()
+                  .HasForeignKey(e => e.GameId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // DailyJourneyNumbers
+        modelBuilder.Entity<DailyJourneyNumber>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            
+            entity.HasOne(e => e.DailyJourney)
+                  .WithMany(j => j.Numbers)
+                  .HasForeignKey(e => e.DailyJourneyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DailyJourneyAnswers
+        modelBuilder.Entity<DailyJourneyAnswer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.DailyJourney)
+                  .WithMany(j => j.Answers)
+                  .HasForeignKey(e => e.DailyJourneyId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

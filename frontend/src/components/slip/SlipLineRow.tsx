@@ -3,7 +3,8 @@ import { SlipLine, SlipNumber } from "@/types/slip";
 import { Game } from "@/types/game";
 import { NumberBall } from "./NumberBall";
 import { sortSlipNumbers } from "@/lib/utils";
-import { Edit3, RotateCw, Trash2, Sparkles, PlusCircle, Layers } from "lucide-react";
+import { Edit3, RotateCw, Trash2, Sparkles, PlusCircle, Layers, Shuffle } from "lucide-react";
+import { useSlipStore } from "@/stores/useSlipStore";
 
 interface SlipLineRowProps {
   line: SlipLine;
@@ -12,6 +13,8 @@ interface SlipLineRowProps {
   onOpenLucky: () => void;
   onOpenMixed: () => void;
   onQuickThanTai: () => void;
+  onQuickRemix: () => void;
+  onLuckyRemix: () => void;
   onReset: () => void;
 }
 
@@ -22,8 +25,11 @@ export function SlipLineRow({
   onOpenLucky,
   onOpenMixed,
   onQuickThanTai,
+  onQuickRemix,
+  onLuckyRemix,
   onReset
 }: SlipLineRowProps) {
+  const toggleLockNumber = useSlipStore((state) => state.toggleLockNumber);
   const isComplete = line.status === "Complete" && line.numbers.length > 0;
   const isEmpty = line.numbers.length === 0;
 
@@ -97,6 +103,9 @@ export function SlipLineRow({
                   poolIndex={0}
                   source={num.source}
                   size="md"
+                  interactive={true}
+                  isLocked={num.isLocked}
+                  onClick={() => toggleLockNumber(line.lineLabel, num.value)}
                 />
               ))}
 
@@ -112,6 +121,9 @@ export function SlipLineRow({
                       source={num.source}
                       isSpecial
                       size="md"
+                      interactive={true}
+                      isLocked={num.isLocked}
+                      onClick={() => toggleLockNumber(line.lineLabel, num.value)}
                     />
                   ))}
                 </>
@@ -191,6 +203,24 @@ export function SlipLineRow({
               <>
                 <button
                   type="button"
+                  onClick={onQuickRemix}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap shrink-0 border border-emerald-500/20 transition-colors"
+                  title="Giữ các số đã khóa, xáo trộn lại các số còn lại ngẫu nhiên"
+                >
+                  <Shuffle className="w-3.5 h-3.5 shrink-0" />
+                  <span className="whitespace-nowrap">Remix Nhanh</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onLuckyRemix}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap shrink-0 border border-rose-500/20 transition-colors"
+                  title="Giữ các số đã khóa, chơi Lucky Journey cho các số còn lại"
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span className="whitespace-nowrap">Remix Lucky</span>
+                </button>
+                <button
+                  type="button"
                   onClick={onOpenMixed}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-1.5 text-xs font-bold whitespace-nowrap shrink-0 border border-purple-500/20 transition-colors"
                   title="Chỉnh sửa chi tiết từng ô số"
@@ -206,15 +236,6 @@ export function SlipLineRow({
                 >
                   <Edit3 className="w-3.5 h-3.5 shrink-0" />
                   <span className="whitespace-nowrap">Sửa</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onQuickThanTai}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 border border-amber-500/20 transition-colors"
-                  title="Tạo lại ngẫu nhiên"
-                >
-                  <RotateCw className="w-3.5 h-3.5 shrink-0" />
-                  <span className="whitespace-nowrap">Tạo lại</span>
                 </button>
                 <button
                   type="button"

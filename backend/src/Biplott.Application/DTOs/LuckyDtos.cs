@@ -8,6 +8,7 @@ public class StartJourneyRequest
     public string LineLabel { get; set; } = "A";
     public List<int>? RecentQuestionIds { get; set; }
     public List<int>? RecentThemeIds { get; set; }
+    public string? GuestSessionToken { get; set; }
 }
 
 public class ChoiceDto
@@ -90,4 +91,14 @@ public class NoveltyContext
     public List<QuestionType> QuestionTypesUsedInJourney { get; set; } = new();
     public List<int> RecentQuestionIds { get; set; } = new();
     public List<int> RecentThemeIds { get; set; } = new();
+}
+
+public class StartRemixJourneyRequest
+{
+    public string GameCode { get; set; } = string.Empty;
+    public string LineLabel { get; set; } = "A";
+    public List<GeneratedNumberDto> Numbers { get; set; } = new();
+    public List<int>? RecentQuestionIds { get; set; }
+    public List<int>? RecentThemeIds { get; set; }
+    public string? GuestSessionToken { get; set; }
 }

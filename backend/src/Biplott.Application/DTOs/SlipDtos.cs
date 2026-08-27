@@ -9,6 +9,7 @@ public class GeneratedNumberDto
     public int PoolIndex { get; set; }
     public NumberSource Source { get; set; } = NumberSource.Random;
     public string? MetadataJson { get; set; }
+    public bool IsLocked { get; set; } = false;
 }
 
 public class GenerateLineRequest

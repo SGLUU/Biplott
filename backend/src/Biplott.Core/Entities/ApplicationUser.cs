@@ -16,4 +16,6 @@ public class ApplicationUser : IdentityUser
 
     public List<Slip> Slips { get; set; } = new();
     public List<UserActivityHistory> ActivityHistories { get; set; } = new();
+    public List<UserTraitProfile> TraitProfiles { get; set; } = new();
+    public DateTime? DnaResetAt { get; set; }
 }

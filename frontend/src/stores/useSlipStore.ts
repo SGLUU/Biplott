@@ -43,6 +43,7 @@ interface SlipState {
   openBulkModal: () => void;
   closeBulkModal: () => void;
   applyBulkLines: (lines: SlipLine[]) => void;
+  toggleLockNumber: (lineLabel: string, value: number) => void;
   setError: (error: string | null) => void;
   setLoading: (isLoading: boolean) => void;
 }
@@ -172,6 +173,30 @@ export const useSlipStore = create<SlipState>()(
           },
           isBulkModalOpen: false
         }));
+      },
+
+      toggleLockNumber: (lineLabel, value) => {
+        set((state) => {
+          const updatedLines = state.slip.lines.map((line) => {
+            if (line.lineLabel.toUpperCase() === lineLabel.toUpperCase()) {
+              const updatedNumbers = line.numbers.map((n) => {
+                if (n.value === value) {
+                  return { ...n, isLocked: !n.isLocked };
+                }
+                return n;
+              });
+              return { ...line, numbers: updatedNumbers };
+            }
+            return line;
+          });
+
+          return {
+            slip: {
+              ...state.slip,
+              lines: updatedLines
+            }
+          };
+        });
       },
 
       setError: (error) => set({ error }),

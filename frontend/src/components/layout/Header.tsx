@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
-import { Sparkles, Dices, User as UserIcon, Ticket, Star, History, LogOut, ChevronDown, ShieldCheck } from "lucide-react";
+import { Sparkles, Dices, User as UserIcon, Ticket, Star, History, LogOut, ChevronDown, ShieldCheck, Dna } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export function Header() {
@@ -112,6 +112,14 @@ export function Header() {
                     >
                       <Star className="w-4 h-4 text-amber-500" />
                       <span>Vé yêu thích</span>
+                    </Link>
+                    <Link
+                      href="/my/lucky-dna"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                    >
+                      <Dna className="w-4 h-4 text-rose-500" />
+                      <span>Lucky DNA</span>
                     </Link>
                     <Link
                       href="/my/history"

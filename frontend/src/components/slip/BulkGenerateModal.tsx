@@ -56,7 +56,16 @@ export function BulkGenerateModal({
         existingLines: slip.lines
       });
 
-      onSuccess(res.lines);
+      const mergedLines = res.lines.map((newLine) => {
+        const origLine = slip.lines.find((l) => l.lineLabel.toUpperCase() === newLine.lineLabel.toUpperCase());
+        const hasLocks = origLine?.numbers.some((n) => n.isLocked);
+        if (hasLocks && origLine) {
+          return origLine;
+        }
+        return newLine;
+      });
+
+      onSuccess(mergedLines);
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi khi sinh cả phiếu Thần Tài";

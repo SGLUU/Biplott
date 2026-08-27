@@ -37,7 +37,9 @@ public class LuckyController : ControllerBase
 
         try
         {
-            var response = await _journeyService.StartJourneyAsync(request, cancellationToken);
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            var response = await _journeyService.StartJourneyAsync(request, userId, cancellationToken);
             return Ok(ApiResponse<StartJourneyResponse>.Ok(response));
         }
         catch (ArgumentException ex)
@@ -79,7 +81,9 @@ public class LuckyController : ControllerBase
 
         try
         {
-            var response = await _journeyService.AnswerStepAsync(journeyId, request, cancellationToken);
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+            var response = await _journeyService.AnswerStepAsync(journeyId, request, userId, cancellationToken);
             return Ok(ApiResponse<AnswerStepResponse>.Ok(response));
         }
         catch (KeyNotFoundException ex)
