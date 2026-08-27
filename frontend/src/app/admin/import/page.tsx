@@ -5,7 +5,8 @@ import { ImportValidationResult, ImportConfirmResponse } from "@/types/admin";
 import {
   validateImportFile,
   confirmImport,
-  getTemplateDownloadUrl
+  downloadImportTemplate,
+  ImportTemplateFormat
 } from "@/lib/adminApi";
 import {
   UploadCloud,
@@ -25,6 +26,8 @@ export default function BulkImportPage() {
   const [importing, setImporting] = useState(false);
   const [importResponse, setImportResponse] = useState<ImportConfirmResponse | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [downloadingTemplate, setDownloadingTemplate] =
+  useState<ImportTemplateFormat | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +72,37 @@ export default function BulkImportPage() {
     setGeneralError(null);
   };
 
+  const handleDownloadTemplate = async (format: ImportTemplateFormat) => {
+    try {
+      setDownloadingTemplate(format);
+      setGeneralError(null);
+
+      const { blob, fileName } = await downloadImportTemplate(format);
+
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 0);
+    } catch (err: unknown) {
+      setGeneralError(
+        err instanceof Error
+          ? err.message
+          : "Không thể tải file mẫu."
+      );
+    } finally {
+      setDownloadingTemplate(null);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
@@ -92,27 +126,45 @@ export default function BulkImportPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <a
-            href={getTemplateDownloadUrl("csv")}
-            download
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-amber-400 transition"
-          >
-            <FileText className="h-4 w-4" /> Mẫu CSV (.csv)
-          </a>
-          <a
-            href={getTemplateDownloadUrl("xlsx")}
-            download
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-emerald-400 transition"
-          >
-            <FileSpreadsheet className="h-4 w-4" /> Mẫu Excel (.xlsx)
-          </a>
-          <a
-            href={getTemplateDownloadUrl("json")}
-            download
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-blue-400 transition"
-          >
-            <FileText className="h-4 w-4" /> Mẫu JSON (.json)
-          </a>
+          <button
+  type="button"
+  onClick={() => handleDownloadTemplate("csv")}
+  disabled={downloadingTemplate !== null}
+  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-amber-400 transition disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {downloadingTemplate === "csv" ? (
+    <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    <FileText className="h-4 w-4" />
+  )}
+  Mẫu CSV (.csv)
+</button>
+          <button
+  type="button"
+  onClick={() => handleDownloadTemplate("xlsx")}
+  disabled={downloadingTemplate !== null}
+  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-emerald-400 transition disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {downloadingTemplate === "xlsx" ? (
+    <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    <FileSpreadsheet className="h-4 w-4" />
+  )}
+  Mẫu Excel (.xlsx)
+</button>
+          <button
+  type="button"
+  onClick={() => handleDownloadTemplate("json")}
+  disabled={downloadingTemplate !== null}
+  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-blue-400 transition disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {downloadingTemplate === "json" ? (
+    <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    <FileText className="h-4 w-4" />
+  )}
+  Mẫu JSON (.json)
+</button>
         </div>
       </div>
 

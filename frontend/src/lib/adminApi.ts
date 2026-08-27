@@ -325,8 +325,73 @@ export async function confirmImport(sessionId?: string, items?: ImportQuestionPr
   return data.data;
 }
 
-export function getTemplateDownloadUrl(format: "csv" | "xlsx" | "json"): string {
-  return `${API_BASE_URL}/api/v1/admin/import/template?format=${format}`;
+export type ImportTemplateFormat = "csv" | "xlsx" | "json";
+
+export async function downloadImportTemplate(
+  format: ImportTemplateFormat
+): Promise<{ blob: Blob; fileName: string }> {
+  const token = getAuthToken();
+
+  const headers: Record<string, string> = {
+    Accept: "*/*"
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/v1/admin/import/template?format=${format}`,
+    {
+      method: "GET",
+      headers,
+      credentials: "include"
+    }
+  );
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+
+    if (res.status === 403) {
+      throw new Error("Bạn không có quyền tải file mẫu.");
+    }
+
+    throw new Error(`Không thể tải file mẫu (${res.status}).`);
+  }
+
+  const blob = await res.blob();
+
+  const fallbackFileNames: Record<ImportTemplateFormat, string> = {
+    csv: "biplott-content-template.csv",
+    xlsx: "biplott-content-template.xlsx",
+    json: "biplott-content-template.json"
+  };
+
+  let fileName = fallbackFileNames[format];
+
+  const contentDisposition = res.headers.get("Content-Disposition");
+
+  if (contentDisposition) {
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const normalMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+
+    if (utf8Match?.[1]) {
+      try {
+        fileName = decodeURIComponent(utf8Match[1]);
+      } catch {
+        fileName = utf8Match[1];
+      }
+    } else if (normalMatch?.[1]) {
+      fileName = normalMatch[1];
+    }
+  }
+
+  return {
+    blob,
+    fileName
+  };
 }
 
 // ----------------------------------------------------
