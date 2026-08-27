@@ -65,6 +65,12 @@ public class RandomNumberEngineTests
             // Must have 6 distinct numbers
             var distinctValues = result.Numbers.Select(n => n.Value).Distinct().ToList();
             Assert.Equal(6, distinctValues.Count);
+
+            // Numbers must be sorted ascending
+            for (int j = 1; j < result.Numbers.Count; j++)
+            {
+                Assert.True(result.Numbers[j].Value > result.Numbers[j - 1].Value, $"Numbers in Power 6/55 should be sorted ascending: {string.Join(",", result.Numbers.Select(n => n.Value))}");
+            }
         }
     }
 
@@ -87,6 +93,12 @@ public class RandomNumberEngineTests
 
             var distinctValues = result.Numbers.Select(n => n.Value).Distinct().ToList();
             Assert.Equal(6, distinctValues.Count);
+
+            // Numbers must be sorted ascending
+            for (int j = 1; j < result.Numbers.Count; j++)
+            {
+                Assert.True(result.Numbers[j].Value > result.Numbers[j - 1].Value, $"Numbers in Mega 6/45 should be sorted ascending: {string.Join(",", result.Numbers.Select(n => n.Value))}");
+            }
         }
     }
 
@@ -116,6 +128,12 @@ public class RandomNumberEngineTests
 
             // Pool 0 must be 5 distinct numbers
             Assert.Equal(5, pool0.Select(n => n.Value).Distinct().Count());
+
+            // Main pool must be sorted ascending separately
+            for (int j = 1; j < pool0.Count; j++)
+            {
+                Assert.True(pool0[j].Value > pool0[j - 1].Value, $"Main pool in Lotto 5/35 should be sorted ascending: {string.Join(",", pool0.Select(n => n.Value))}");
+            }
         }
     }
 

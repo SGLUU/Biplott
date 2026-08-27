@@ -168,4 +168,173 @@ public class UserSlipServiceTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.GetSlipDetailAsync(userA, saved.Id));
     }
+
+    [Fact]
+    public async Task SaveSlip_UnsortedNumbers_PersistsAndReturnsSortedAscending()
+    {
+        var (_, service, _) = CreateTestContext();
+        var userId = "user-sort-test";
+
+        var req = new SaveSlipRequest
+        {
+            GameCode = "POWER_655",
+            Title = "Vé test sorting",
+            Lines = new List<SaveSlipLineDto>
+            {
+                new()
+                {
+                    LineLabel = "A",
+                    Numbers = new List<SaveSlipNumberDto>
+                    {
+                        new() { Value = 45, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 2,  PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 34, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 16, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 30, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 13, PoolIndex = 0, Source = NumberSource.Random }
+                    }
+                }
+            }
+        };
+
+        var saved = await service.SaveSlipAsync(userId, req);
+        Assert.NotNull(saved);
+
+        // Summary should have numbers in sorted ascending order: 2, 13, 16, 30, 34, 45
+        var summaryValues = saved.Lines[0].Numbers.Select(n => n.Value).ToList();
+        Assert.Equal(new List<int> { 2, 13, 16, 30, 34, 45 }, summaryValues);
+
+        // Detail should also have numbers in sorted ascending order
+        var detail = await service.GetSlipDetailAsync(userId, saved.Id);
+        var detailValues = detail.Lines[0].Numbers.Select(n => n.Value).ToList();
+        Assert.Equal(new List<int> { 2, 13, 16, 30, 34, 45 }, detailValues);
+    }
+
+    [Fact]
+    public async Task SaveSlip_MixedMode_PreservesSourcesAndLuckyStoryMetadataAfterSort()
+    {
+        var (_, service, _) = CreateTestContext();
+        var userId = "user-mixed-sort";
+
+        var lucky17Meta = "{\"themeName\":\"Công sở\",\"questionText\":\"Sếp mắng?\",\"choiceText\":\"Cười trừ\",\"explanation\":\"Bình tâm\"}";
+        var lucky31Meta = "{\"themeName\":\"Tình duyên\",\"questionText\":\"Người yêu cũ cưới?\",\"choiceText\":\"Đi ăn cỗ\",\"explanation\":\"Ăn no nê\"}";
+
+        var req = new SaveSlipRequest
+        {
+            GameCode = "POWER_655",
+            Title = "Vé Mixed Test",
+            Lines = new List<SaveSlipLineDto>
+            {
+                new()
+                {
+                    LineLabel = "A",
+                    Numbers = new List<SaveSlipNumberDto>
+                    {
+                        new() { Value = 24, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 8,  PoolIndex = 0, Source = NumberSource.Manual },
+                        new() { Value = 17, PoolIndex = 0, Source = NumberSource.Lucky, MetadataJson = lucky17Meta },
+                        new() { Value = 44, PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 39, PoolIndex = 0, Source = NumberSource.Manual },
+                        new() { Value = 31, PoolIndex = 0, Source = NumberSource.Lucky, MetadataJson = lucky31Meta }
+                    }
+                }
+            }
+        };
+
+        var saved = await service.SaveSlipAsync(userId, req);
+        Assert.Equal("Mixed", saved.Lines[0].DerivedMode);
+
+        var detail = await service.GetSlipDetailAsync(userId, saved.Id);
+        var sortedLine = detail.Lines[0];
+
+        // Values must be: 8, 17, 24, 31, 39, 44
+        var values = sortedLine.Numbers.Select(n => n.Value).ToList();
+        Assert.Equal(new List<int> { 8, 17, 24, 31, 39, 44 }, values);
+
+        // Sources must stay correctly attached to each number
+        var num8 = sortedLine.Numbers.First(n => n.Value == 8);
+        Assert.Equal(NumberSource.Manual, num8.Source);
+
+        var num17 = sortedLine.Numbers.First(n => n.Value == 17);
+        Assert.Equal(NumberSource.Lucky, num17.Source);
+        Assert.Contains("Công sở", num17.MetadataJson);
+
+        var num24 = sortedLine.Numbers.First(n => n.Value == 24);
+        Assert.Equal(NumberSource.Random, num24.Source);
+
+        var num31 = sortedLine.Numbers.First(n => n.Value == 31);
+        Assert.Equal(NumberSource.Lucky, num31.Source);
+        Assert.Contains("Tình duyên", num31.MetadataJson);
+
+        var num39 = sortedLine.Numbers.First(n => n.Value == 39);
+        Assert.Equal(NumberSource.Manual, num39.Source);
+
+        var num44 = sortedLine.Numbers.First(n => n.Value == 44);
+        Assert.Equal(NumberSource.Random, num44.Source);
+
+        // Lucky stories must map correctly to the lucky numbers
+        Assert.Equal(2, detail.LuckyStories.Count);
+        var story17 = detail.LuckyStories.First(s => s.NumberValue == 17);
+        Assert.Equal("Công sở", story17.ThemeName);
+        Assert.Equal("Cười trừ", story17.ChoiceText);
+
+        var story31 = detail.LuckyStories.First(s => s.NumberValue == 31);
+        Assert.Equal("Tình duyên", story31.ThemeName);
+        Assert.Equal("Đi ăn cỗ", story31.ChoiceText);
+    }
+
+    [Fact]
+    public async Task SaveSlip_DualPoolLotto535_SortsMainAndSpecialPoolsSeparately()
+    {
+        var (db, service, _) = CreateTestContext();
+        var lottoGame = new Game
+        {
+            Code = "LOTTO_535",
+            Name = "Lotto 5/35",
+            IsActive = true,
+            Pools = new List<GamePool>
+            {
+                new() { PoolIndex = 0, Name = "Dãy số chính", MinNumber = 1, MaxNumber = 35, PickCount = 5, AllowDuplicates = false },
+                new() { PoolIndex = 1, Name = "Số đặc biệt", MinNumber = 1, MaxNumber = 12, PickCount = 1, AllowDuplicates = false }
+            }
+        };
+        db.Games.Add(lottoGame);
+        await db.SaveChangesAsync();
+
+        var userId = "user-lotto-sort";
+        var req = new SaveSlipRequest
+        {
+            GameCode = "LOTTO_535",
+            Title = "Vé Lotto 5/35 Test",
+            Lines = new List<SaveSlipLineDto>
+            {
+                new()
+                {
+                    LineLabel = "A",
+                    Numbers = new List<SaveSlipNumberDto>
+                    {
+                        // Unsorted main pool (21, 3, 18, 7, 30)
+                        new() { Value = 21, PoolIndex = 0, Source = NumberSource.Manual },
+                        new() { Value = 3,  PoolIndex = 0, Source = NumberSource.Random },
+                        new() { Value = 18, PoolIndex = 0, Source = NumberSource.Lucky },
+                        new() { Value = 7,  PoolIndex = 0, Source = NumberSource.Manual },
+                        new() { Value = 30, PoolIndex = 0, Source = NumberSource.Random },
+                        // Special pool (9)
+                        new() { Value = 9,  PoolIndex = 1, Source = NumberSource.Lucky }
+                    }
+                }
+            }
+        };
+
+        var saved = await service.SaveSlipAsync(userId, req);
+        var detail = await service.GetSlipDetailAsync(userId, saved.Id);
+
+        var pool0 = detail.Lines[0].Numbers.Where(n => n.PoolIndex == 0).Select(n => n.Value).ToList();
+        var pool1 = detail.Lines[0].Numbers.Where(n => n.PoolIndex == 1).Select(n => n.Value).ToList();
+
+        // Main pool is sorted: 3, 7, 18, 21, 30
+        Assert.Equal(new List<int> { 3, 7, 18, 21, 30 }, pool0);
+        // Special pool is separate: 9
+        Assert.Equal(new List<int> { 9 }, pool1);
+    }
 }

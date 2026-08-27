@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { SavedSlipDetail } from "@/types/savedSlip";
 import { apiGetSlipDetail, apiToggleFavoriteSlip, apiDeleteSlip } from "@/lib/api";
 import { NumberBall } from "@/components/slip/NumberBall";
+import { sortSlipNumbers } from "@/lib/utils";
 import {
   Ticket,
   Heart,
@@ -189,7 +190,7 @@ export default function SlipDetailPage({ params }: SlipDetailPageProps) {
                 </span>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {line.numbers.map((num, idx) => (
+                  {sortSlipNumbers(line.numbers).map((num, idx) => (
                     <NumberBall
                       key={`${line.lineLabel}-${num.poolIndex}-${num.value}-${idx}`}
                       value={num.value}

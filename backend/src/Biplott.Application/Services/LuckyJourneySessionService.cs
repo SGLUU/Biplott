@@ -161,6 +161,11 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
             // Clean commentary
             string commentary = $"Hành trình hoàn tất! Bạn đã mở đủ {session.TotalSteps} con số may mắn qua các cung bậc cảm xúc.";
 
+            var sortedCompletedNumbers = session.GeneratedNumbers
+                .OrderBy(n => n.PoolIndex)
+                .ThenBy(n => n.Value)
+                .ToList();
+
             return new AnswerStepResponse
             {
                 JourneyId = session.JourneyId,
@@ -172,7 +177,7 @@ public class LuckyJourneySessionService : ILuckyJourneySessionService
                 IsClimaxStep = session.CurrentStep == session.TotalSteps && game.Pools.Count > 1,
                 IsCompleted = true,
                 NextQuestion = null,
-                CompletedNumbers = session.GeneratedNumbers,
+                CompletedNumbers = sortedCompletedNumbers,
                 JourneyCommentary = commentary
             };
         }

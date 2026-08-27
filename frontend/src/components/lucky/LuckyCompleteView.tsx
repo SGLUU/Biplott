@@ -3,6 +3,7 @@
 import React from "react";
 import { RevealedNumberDto } from "@/types/lucky";
 import { NumberBall } from "@/components/slip/NumberBall";
+import { sortSlipNumbers } from "@/lib/utils";
 import { CheckCircle2, Sparkles } from "lucide-react";
 
 interface LuckyCompleteViewProps {
@@ -39,7 +40,7 @@ export function LuckyCompleteView({
 
       {/* Main Balls Presentation */}
       <div className="p-4 sm:p-6 rounded-3xl bg-gradient-to-br from-muted/60 via-card to-muted/30 border border-border/80 shadow-xl flex items-center justify-center gap-2.5 sm:gap-3 flex-wrap">
-        {completedNumbers.map((num, idx) => (
+        {sortSlipNumbers(completedNumbers).map((num, idx) => (
           <NumberBall
             key={`completed-ball-${idx}-${num.value}`}
             value={num.value}

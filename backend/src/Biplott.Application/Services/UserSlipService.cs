@@ -103,8 +103,13 @@ public class UserSlipService : IUserSlipService
                 UpdatedAt = DateTime.UtcNow
             };
 
+            var sortedNumbers = lineReq.Numbers
+                .OrderBy(n => n.PoolIndex)
+                .ThenBy(n => n.Value)
+                .ToList();
+
             int order = 0;
-            foreach (var numReq in lineReq.Numbers)
+            foreach (var numReq in sortedNumbers)
             {
                 slipLine.Numbers.Add(new SlipLineNumber
                 {
@@ -207,7 +212,7 @@ public class UserSlipService : IUserSlipService
             });
 
             // Parse Lucky Stories from metadata
-            foreach (var num in line.Numbers.Where(n => n.Source == NumberSource.Lucky && !string.IsNullOrWhiteSpace(n.MetadataJson)))
+            foreach (var num in line.Numbers.Where(n => n.Source == NumberSource.Lucky && !string.IsNullOrWhiteSpace(n.MetadataJson)).OrderBy(n => n.PoolIndex).ThenBy(n => n.Value))
             {
                 try
                 {

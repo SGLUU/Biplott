@@ -210,5 +210,11 @@ public class MixedServiceTests
 
         var mainUnique = new HashSet<int>(mainNumbers.Select(n => n.Value));
         Assert.Equal(5, mainUnique.Count);
+
+        // Main numbers must be sorted ascending
+        for (int j = 1; j < mainNumbers.Count; j++)
+        {
+            Assert.True(mainNumbers[j].Value > mainNumbers[j - 1].Value, "Main numbers in Lotto 5/35 must be sorted ascending");
+        }
     }
 }

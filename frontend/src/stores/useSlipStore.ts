@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Game } from "@/types/game";
 import { Slip, SlipLine, SlipNumber, SlipLineStatus, RandomStrategy } from "@/types/slip";
+import { sortSlipNumbers } from "@/lib/utils";
 
 const STANDARD_LINE_LABELS = ["A", "B", "C", "D", "E", "F"];
 
@@ -84,12 +85,13 @@ export const useSlipStore = create<SlipState>()(
       },
 
       setLineNumbers: (lineLabel, numbers, status = "Complete", strategy, commentary) => {
+        const sortedNumbers = sortSlipNumbers(numbers);
         set((state) => {
           const updatedLines = state.slip.lines.map((line) => {
             if (line.lineLabel.toUpperCase() === lineLabel.toUpperCase()) {
               return {
                 ...line,
-                numbers,
+                numbers: sortedNumbers,
                 status,
                 strategy: strategy || line.strategy,
                 commentary: commentary || line.commentary
@@ -159,10 +161,14 @@ export const useSlipStore = create<SlipState>()(
       },
 
       applyBulkLines: (lines) => {
+        const sortedLines = lines.map((l) => ({
+          ...l,
+          numbers: sortSlipNumbers(l.numbers)
+        }));
         set((state) => ({
           slip: {
             ...state.slip,
-            lines
+            lines: sortedLines
           },
           isBulkModalOpen: false
         }));

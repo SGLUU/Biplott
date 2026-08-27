@@ -4,6 +4,7 @@ import React from "react";
 import { Game } from "@/types/game";
 import { SlipNumber } from "@/types/slip";
 import { useMixedBuilderStore } from "@/stores/useMixedBuilderStore";
+import { sortSlipNumbers } from "@/lib/utils";
 import { MixedSlotCard } from "./MixedSlotCard";
 import { SlotSourcePicker } from "./SlotSourcePicker";
 import {
@@ -68,7 +69,7 @@ export function MixedBuilderModal({ game, onSaveToSlipLine }: MixedBuilderModalP
   const handleApplyCompletedLine = () => {
     if (!isAllCompleted) return;
 
-    const formattedNumbers: SlipNumber[] = slots.map((s) => s.number!);
+    const formattedNumbers: SlipNumber[] = sortSlipNumbers(slots.map((s) => s.number!));
     onSaveToSlipLine(lineLabel, formattedNumbers);
     closeBuilder();
   };

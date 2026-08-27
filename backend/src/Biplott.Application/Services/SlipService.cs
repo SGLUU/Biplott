@@ -129,7 +129,7 @@ public class SlipService : ISlipService
             {
                 LineLabel = label,
                 Status = SlipLineStatus.Complete,
-                Numbers = newLine!.Numbers,
+                Numbers = newLine!.Numbers.OrderBy(n => n.PoolIndex).ThenBy(n => n.Value).ToList(),
                 Strategy = request.Strategy,
                 Commentary = newLine.Commentary
             });

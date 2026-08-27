@@ -6,19 +6,24 @@ export function HeroSection() {
       {/* Background Glows */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-tr from-rose-500/15 via-orange-500/15 to-amber-400/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
-      {/* Pill Badge */}
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-rose-500/10 via-orange-500/10 to-amber-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold mb-6 shadow-sm">
-        <Flame className="w-4 h-4 text-rose-500 animate-bounce" />
-        <span>Nền tảng sinh số châm biếm & giải trí số 1 Việt Nam</span>
+      {/* Pill Badge & Humorous Note */}
+      <div className="flex flex-col items-center gap-1.5 mb-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-rose-500/10 via-orange-500/10 to-amber-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold shadow-sm">
+          <Flame className="w-4 h-4 text-rose-500 animate-bounce shrink-0" />
+          <span>Nền tảng sinh số châm biếm & giải trí số 2 Việt Nam</span>
+        </div>
+        <p className="text-[11px] sm:text-xs text-muted-foreground/80 italic">
+          (Không dám nhận số 1 vì chưa có bằng chứng xác minh 😌)
+        </p>
       </div>
 
       {/* Main Heading */}
-      <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 max-w-3xl leading-[1.15] mb-4">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-6xl font-black tracking-tight text-zinc-950 dark:text-zinc-50 max-w-5xl leading-[1.15] mb-4">
         Cơ hội để{" "}
-        <span className="bg-gradient-to-r from-rose-600 via-orange-500 to-amber-500 bg-clip-text text-transparent underline decoration-amber-400/40 decoration-wavy decoration-2">
+        <span className="bg-gradient-to-r from-rose-600 via-orange-500 to-amber-500 bg-clip-text text-transparent">
           nát hơn
         </span>{" "}
-        cùng số phận!
+        <span className="inline-block sm:inline">cùng số phận!</span>
       </h1>
 
       {/* Subheading */}

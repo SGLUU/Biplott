@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Game } from "@/types/game";
 import { SlipNumber } from "@/types/slip";
 import { useLuckyJourneyStore } from "@/stores/useLuckyJourneyStore";
+import { sortSlipNumbers } from "@/lib/utils";
 import { JourneyProgressBar } from "./JourneyProgressBar";
 import { QuestionCard } from "./QuestionCard";
 import { NumberRevealView } from "./NumberRevealView";
@@ -62,13 +63,15 @@ export function LuckyJourneyModal({
   };
 
   const handleApplyCompleted = () => {
-    const formattedNumbers: SlipNumber[] = completedNumbers.map((n) => ({
-      value: n.value,
-      formatted: n.formatted,
-      poolIndex: n.poolIndex,
-      source: "Lucky",
-      metadataJson: n.metadataJson
-    }));
+    const formattedNumbers: SlipNumber[] = sortSlipNumbers(
+      completedNumbers.map((n) => ({
+        value: n.value,
+        formatted: n.formatted,
+        poolIndex: n.poolIndex,
+        source: "Lucky",
+        metadataJson: n.metadataJson
+      }))
+    );
 
     onSaveToSlipLine(lineLabel, formattedNumbers, journeyCommentary || undefined);
     resetJourney();

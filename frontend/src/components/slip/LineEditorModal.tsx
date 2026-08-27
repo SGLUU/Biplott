@@ -138,13 +138,13 @@ export function LineEditorModal({
     setErrorMessage(null);
 
     const formattedNumbers: SlipNumber[] = [
-      ...selectedPool0.sort((a, b) => a - b).map((val) => ({
+      ...[...selectedPool0].sort((a, b) => a - b).map((val) => ({
         value: val,
         formatted: val.toString().padStart(2, "0"),
         poolIndex: 0,
         source: "Manual" as const
       })),
-      ...selectedPool1.sort((a, b) => a - b).map((val) => ({
+      ...[...selectedPool1].sort((a, b) => a - b).map((val) => ({
         value: val,
         formatted: val.toString().padStart(2, "0"),
         poolIndex: 1,
