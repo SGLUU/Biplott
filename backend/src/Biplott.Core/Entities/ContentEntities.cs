@@ -11,6 +11,8 @@ public class Theme
     public string? Icon { get; set; }
     public int SortOrder { get; set; } = 0;
     public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public List<Question> Questions { get; set; } = new();
 }
@@ -23,6 +25,8 @@ public class Trait
     public string? Description { get; set; }
     public string? Category { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public List<ChoiceTrait> ChoiceTraits { get; set; } = new();
 }
@@ -54,6 +58,8 @@ public class QuestionChoice
     public string? MediaUrl { get; set; }
     public int OrderIndex { get; set; } = 0;
     public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public Question Question { get; set; } = null!;
     public List<ChoiceTrait> ChoiceTraits { get; set; } = new();

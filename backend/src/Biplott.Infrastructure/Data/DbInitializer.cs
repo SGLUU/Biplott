@@ -209,6 +209,11 @@ public static class DbInitializer
                 }
             }
 
+            var configuration = scope.ServiceProvider.GetService<Microsoft.Extensions.Configuration.IConfiguration>();
+            var adminPassword = configuration?["AdminSeed:Password"]
+                ?? Environment.GetEnvironmentVariable("ADMIN_SEED_PASSWORD")
+                ?? "Admin@123456";
+
             var adminEmail = "admin@biplott.local";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)
@@ -221,11 +226,11 @@ public static class DbInitializer
                     EmailConfirmed = true,
                     IsActive = true
                 };
-                var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+                var result = await userManager.CreateAsync(adminUser, adminPassword);
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin");
-                    logger.LogInformation("Seeded development admin account: admin@biplott.local");
+                    logger.LogInformation("Seeded development admin account: {AdminEmail}", adminEmail);
                 }
             }
         }

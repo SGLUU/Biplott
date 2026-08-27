@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
-import { Sparkles, Dices, User as UserIcon, Ticket, Star, History, LogOut, ChevronDown } from "lucide-react";
+import { Sparkles, Dices, User as UserIcon, Ticket, Star, History, LogOut, ChevronDown, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 export function Header() {
@@ -87,6 +87,16 @@ export function Header() {
                   </div>
 
                   <div className="py-1">
+                    {user.roles?.includes("Admin") && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-500" />
+                        <span>Trang Quản Trị (Admin)</span>
+                      </Link>
+                    )}
                     <Link
                       href="/my/slips"
                       onClick={() => setDropdownOpen(false)}

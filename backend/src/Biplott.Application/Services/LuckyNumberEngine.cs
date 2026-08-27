@@ -18,15 +18,17 @@ public interface ILuckyNumberEngine
 public class LuckyNumberEngine : ILuckyNumberEngine
 {
     private readonly IRandomSource _defaultRandomSource;
+    private readonly IEngineConfigService? _configService;
 
     private static readonly HashSet<int> Primes = new()
     {
         2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61
     };
 
-    public LuckyNumberEngine(IRandomSource randomSource)
+    public LuckyNumberEngine(IRandomSource randomSource, IEngineConfigService? configService = null)
     {
         _defaultRandomSource = randomSource;
+        _configService = configService;
     }
 
     public RevealedNumberDto GenerateLuckyNumber(
@@ -37,6 +39,7 @@ public class LuckyNumberEngine : ILuckyNumberEngine
         IRandomSource? randomSource = null)
     {
         var rng = randomSource ?? _defaultRandomSource;
+        var config = _configService?.GetCurrentLuckyConfig() ?? new LuckyEngineConfigDto();
 
         // 1. Determine valid candidate numbers in pool
         var candidates = Enumerable.Range(pool.MinNumber, pool.MaxNumber - pool.MinNumber + 1)
@@ -61,10 +64,10 @@ public class LuckyNumberEngine : ILuckyNumberEngine
         foreach (var num in candidates)
         {
             double affinity = CalculateTotalAffinity(num, pool, choiceTraits, previousNumbersInLine);
-            double noise = (rng.NextDouble() * 2.0 - 1.0) * 2.0; // [-2.0, 2.0]
+            double noise = (rng.NextDouble() * 2.0 - 1.0) * config.NoiseMagnitude;
 
-            // W(n) = max(1.0, BaseWeight (10.0) + 5.0 * Affinity + Noise)
-            double finalWeight = Math.Max(1.0, 10.0 + (5.0 * affinity) + noise);
+            // W(n) = max(minWeight, BaseWeight + affinityMultiplier * Affinity + Noise)
+            double finalWeight = Math.Max(config.MinWeight, config.BaseWeight + (config.TraitAffinityMultiplier * affinity) + noise);
             scoredCandidates.Add((num, finalWeight));
         }
 

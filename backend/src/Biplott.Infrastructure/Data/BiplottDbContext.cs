@@ -112,6 +112,7 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.SortOrder });
             entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
@@ -123,6 +124,7 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.Code });
             entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
@@ -133,6 +135,10 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Question>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.ThemeId, e.IsActive });
+            entity.HasIndex(e => new { e.QuestionType, e.IsActive });
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.UpdatedAt);
             entity.Property(e => e.QuestionType).HasConversion<string>().HasMaxLength(30);
             entity.Property(e => e.Content).HasMaxLength(1000).IsRequired();
             entity.Property(e => e.Subtitle).HasMaxLength(500);
@@ -153,6 +159,7 @@ public class BiplottDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<QuestionChoice>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.QuestionId, e.IsActive });
             entity.Property(e => e.Content).HasMaxLength(500).IsRequired();
             entity.Property(e => e.SubContent).HasMaxLength(255);
             entity.Property(e => e.MediaUrl).HasMaxLength(500);

@@ -187,10 +187,10 @@ public class QuestionRepository : IQuestionRepository
     {
         return await _dbContext.Questions
             .Include(q => q.Theme)
-            .Include(q => q.Choices)
+            .Include(q => q.Choices.Where(c => c.IsActive))
                 .ThenInclude(c => c.ChoiceTraits)
                     .ThenInclude(ct => ct.Trait)
-            .Where(q => q.IsActive && q.Theme.IsActive)
+            .Where(q => q.IsActive && q.Theme.IsActive && q.Choices.Count(c => c.IsActive) >= 2)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

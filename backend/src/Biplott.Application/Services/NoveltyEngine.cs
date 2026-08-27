@@ -17,10 +17,12 @@ public interface INoveltyEngine
 public class NoveltyEngine : INoveltyEngine
 {
     private readonly IRandomSource _defaultRandomSource;
+    private readonly IEngineConfigService? _configService;
 
-    public NoveltyEngine(IRandomSource randomSource)
+    public NoveltyEngine(IRandomSource randomSource, IEngineConfigService? configService = null)
     {
         _defaultRandomSource = randomSource;
+        _configService = configService;
     }
 
     public QuestionDto SelectNextQuestion(
@@ -30,6 +32,7 @@ public class NoveltyEngine : INoveltyEngine
         IRandomSource? randomSource = null)
     {
         var rng = randomSource ?? _defaultRandomSource;
+        var config = _configService?.GetCurrentNoveltyConfig() ?? new NoveltyEngineConfigDto();
 
         if (allActiveQuestions == null || allActiveQuestions.Count == 0)
         {
@@ -58,34 +61,34 @@ public class NoveltyEngine : INoveltyEngine
 
         foreach (var q in candidates)
         {
-            double weight = 100.0;
+            double weight = config.BaseWeight;
 
             // Never seen vs recently seen
             if (recentQuestions.Contains(q.Id))
             {
-                weight -= 70.0; // RecentlySeenPenalty
+                weight -= config.RecentlySeenPenalty;
             }
             else
             {
-                weight += 50.0; // NeverSeenBonus
+                weight += config.NeverSeenBonus;
             }
 
             // Theme diversity within current journey
             if (themesInJourney.Contains(q.ThemeId))
             {
-                weight -= 60.0; // RepeatedThemePenalty
+                weight -= config.RepeatedThemePenalty;
             }
 
             // Recent theme penalty from previous sessions
             if (recentThemes.Contains(q.ThemeId))
             {
-                weight -= 30.0;
+                weight -= config.RecentThemePenalty;
             }
 
             // Question type diversity bonus
             if (context.QuestionTypesUsedInJourney.Count > 0 && q.QuestionType != lastQuestionType)
             {
-                weight += 25.0; // QuestionTypeDiversityBonus
+                weight += config.QuestionTypeDiversityBonus;
             }
 
             // Climax step boost (for Lotto special pool)
@@ -93,11 +96,11 @@ public class NoveltyEngine : INoveltyEngine
             {
                 if (q.Theme?.Code == "THEME_DESTINY" || q.Theme?.Name.Contains("Định mệnh") == true)
                 {
-                    weight += 500.0;
+                    weight += config.ClimaxDestinyThemeBoost;
                 }
                 else if (q.QuestionType == QuestionType.QuickInstinct)
                 {
-                    weight += 100.0;
+                    weight += config.ClimaxQuickInstinctBoost;
                 }
             }
 
