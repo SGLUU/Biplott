@@ -204,89 +204,94 @@ public class ContentImportService : IContentImportService
         var themes = await _dbContext.Themes.ToDictionaryAsync(t => t.Code.ToUpperInvariant(), cancellationToken);
         var traits = await _dbContext.Traits.ToDictionaryAsync(t => t.Code.ToLowerInvariant(), cancellationToken);
 
-        using var transaction = _dbContext.Database.IsRelational() ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
-        try
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
         {
-            var now = DateTime.UtcNow;
-            int importedQuestions = 0;
-            int importedChoices = 0;
-
-            foreach (var item in validItems)
+            using var transaction = _dbContext.Database.IsRelational() ? await _dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+            try
             {
-                if (!themes.TryGetValue(item.ThemeCode.ToUpperInvariant(), out var theme))
-                    continue;
+                var now = DateTime.UtcNow;
+                int importedQuestions = 0;
+                int importedChoices = 0;
 
-                Enum.TryParse<QuestionType>(item.QuestionType, true, out var qType);
-
-                var question = new Question
+                foreach (var item in validItems)
                 {
-                    ThemeId = theme.Id,
-                    QuestionType = qType == 0 ? QuestionType.SingleChoice : qType,
-                    Content = SanitizeFormulaInjection(item.Content),
-                    Subtitle = !string.IsNullOrWhiteSpace(item.Subtitle) ? SanitizeFormulaInjection(item.Subtitle) : null,
-                    IsActive = true,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                };
+                    if (!themes.TryGetValue(item.ThemeCode.ToUpperInvariant(), out var theme))
+                        continue;
 
-                int orderIdx = 0;
-                foreach (var c in item.Choices)
-                {
-                    var choice = new QuestionChoice
+                    Enum.TryParse<QuestionType>(item.QuestionType, true, out var qType);
+
+                    var question = new Question
                     {
-                        Content = SanitizeFormulaInjection(c.Content),
-                        SubContent = !string.IsNullOrWhiteSpace(c.SubContent) ? SanitizeFormulaInjection(c.SubContent) : null,
-                        OrderIndex = orderIdx++,
+                        ThemeId = theme.Id,
+                        QuestionType = qType == 0 ? QuestionType.SingleChoice : qType,
+                        Content = SanitizeFormulaInjection(item.Content),
+                        Subtitle = !string.IsNullOrWhiteSpace(item.Subtitle) ? SanitizeFormulaInjection(item.Subtitle) : null,
                         IsActive = true,
                         CreatedAt = now,
                         UpdatedAt = now
                     };
 
-                    foreach (var t in c.Traits)
+                    int orderIdx = 0;
+                    foreach (var c in item.Choices)
                     {
-                        if (traits.TryGetValue(t.TraitCode.ToLowerInvariant(), out var traitEntity))
+                        var choice = new QuestionChoice
                         {
-                            choice.ChoiceTraits.Add(new ChoiceTrait
+                            Content = SanitizeFormulaInjection(c.Content),
+                            SubContent = !string.IsNullOrWhiteSpace(c.SubContent) ? SanitizeFormulaInjection(c.SubContent) : null,
+                            OrderIndex = orderIdx++,
+                            IsActive = true,
+                            CreatedAt = now,
+                            UpdatedAt = now
+                        };
+
+                        foreach (var t in c.Traits)
+                        {
+                            if (traits.TryGetValue(t.TraitCode.ToLowerInvariant(), out var traitEntity))
                             {
-                                TraitId = traitEntity.Id,
-                                Weight = Math.Clamp(t.Weight, 0.0, 1.0)
-                            });
+                                choice.ChoiceTraits.Add(new ChoiceTrait
+                                {
+                                    TraitId = traitEntity.Id,
+                                    Weight = Math.Clamp(t.Weight, 0.0, 1.0)
+                                });
+                            }
                         }
+
+                        question.Choices.Add(choice);
+                        importedChoices++;
                     }
 
-                    question.Choices.Add(choice);
-                    importedChoices++;
+                    await _dbContext.Questions.AddAsync(question, cancellationToken);
+                    importedQuestions++;
                 }
 
-                await _dbContext.Questions.AddAsync(question, cancellationToken);
-                importedQuestions++;
-            }
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                if (transaction != null)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
-            if (transaction != null)
-            {
-                await transaction.CommitAsync(cancellationToken);
-            }
+                _logger.LogInformation("Successfully imported {QuestionsCount} questions and {ChoicesCount} choices.", importedQuestions, importedChoices);
 
-            _logger.LogInformation("Successfully imported {QuestionsCount} questions and {ChoicesCount} choices.", importedQuestions, importedChoices);
-
-            return new ImportConfirmResponseDto
-            {
-                Success = true,
-                ImportedQuestionsCount = importedQuestions,
-                ImportedChoicesCount = importedChoices,
-                Message = $"Đã nhập thành công {importedQuestions} câu hỏi và {importedChoices} lựa chọn vào hệ thống."
-            };
-        }
-        catch (Exception ex)
-        {
-            if (transaction != null)
-            {
-                await transaction.RollbackAsync(cancellationToken);
+                return new ImportConfirmResponseDto
+                {
+                    Success = true,
+                    ImportedQuestionsCount = importedQuestions,
+                    ImportedChoicesCount = importedChoices,
+                    Message = $"Đã nhập thành công {importedQuestions} câu hỏi và {importedChoices} lựa chọn vào hệ thống."
+                };
             }
-            _logger.LogError(ex, "Transaction rolled back during content import.");
-            throw new InvalidOperationException($"Lỗi khi lưu dữ liệu vào cơ sở dữ liệu: {ex.Message}");
-        }
+            catch (Exception ex)
+            {
+                if (transaction != null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+                _logger.LogError(ex, "Transaction rolled back during content import.");
+                throw new InvalidOperationException($"Lỗi khi lưu dữ liệu vào cơ sở dữ liệu: {ex.Message}");
+            }
+        });
     }
 
     public async Task<(byte[] FileBytes, string ContentType, string FileName)> GenerateTemplateAsync(string format, CancellationToken cancellationToken = default)
